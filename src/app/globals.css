@@ -1,9 +1,9 @@
 :root {
-  --paper: #f7f5ee;
-  --ink: #262c25;
-  --muted: #62685c;
+  --paper: #f8f5ed;
+  --ink: #292720;
+  --muted: #676257;
   --green: #365640;
-  --line: #d9dbcf;
+  --line: #d9d3c5;
   --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
   color-scheme: light;
 }

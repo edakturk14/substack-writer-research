@@ -49,14 +49,12 @@ function ArticleCard({ article, saved, savedView, onSave, onRemove, storageReady
   const date = article.publishedDate ? dateLabel(article.publishedDate) : null;
   return (
     <article className={styles.article}>
-      {(article.publication || date) && (
-        <div className={styles.metadata}>
-          {article.publication && <span className={styles.publication}>{article.publication}</span>}
-          {date && <time dateTime={article.publishedDate}>{date}</time>}
-        </div>
-      )}
       <h3>{article.title}</h3>
-      {article.author && <p className={styles.byline}>By {article.author}</p>}
+      <div className={styles.metadata}>
+        <span className={styles.publication}>{article.publication || new URL(article.url).hostname}</span>
+        {article.author && <span>By {article.author}</span>}
+        {date && <time dateTime={article.publishedDate}>{date}</time>}
+      </div>
       {article.excerpt && <p className={styles.excerpt}>{shortExcerpt(article.excerpt)}</p>}
       <div className={styles.cardActions}>
         <a href={article.url} target="_blank" rel="noopener noreferrer" title="Opens in a new tab">
@@ -207,10 +205,7 @@ export default function ResearchWorkspace({ demoMode }: { demoMode: boolean }) {
     <div className={styles.page}>
       <a className={styles.skipLink} href="#main">Skip to content</a>
       <header className={styles.header}>
-        <div className={styles.brand}>
-          <span className={styles.brandMark} aria-hidden="true">s.</span>
-          <div><span className={styles.brandName}>Substack Writer Research</span><span className={styles.brandTag}>A READING SHELF FOR YOUR NEXT DRAFT</span></div>
-        </div>
+        <span className={styles.brandName}>Substack Writer Research</span>
         <nav className={styles.navigation} aria-label="Workspace views">
           <button type="button" aria-pressed={view === "search"} onClick={() => setView("search")}>Search</button>
           <button type="button" aria-pressed={view === "saved"} onClick={() => setView("saved")}>
@@ -224,10 +219,8 @@ export default function ResearchWorkspace({ demoMode }: { demoMode: boolean }) {
 
         {view === "search" ? (
           <>
-            <section className={styles.hero} aria-labelledby="page-title">
-              <div className={styles.eyebrow}>A LITTLE CURIOSITY GOES A LONG WAY</div>
-              <h1 id="page-title">Find a fresh perspective.<br /><em>Follow it somewhere.</em></h1>
-              <p>Explore independent writing on Substack. Bring a question,<br className={styles.desktopBreak} /> discover an angle, and keep the pieces worth coming back to.</p>
+            <section className={styles.pageHeading} aria-labelledby="page-title">
+              <h1 id="page-title">Search Substack posts</h1>
             </section>
             <section className={styles.searchSection} aria-label="Article search">
               <form onSubmit={search} className={styles.form}>
@@ -239,7 +232,7 @@ export default function ResearchWorkspace({ demoMode }: { demoMode: boolean }) {
                     name="query"
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Find posts where someone measured what made their AI app slow."
+                    placeholder="A topic or question"
                     maxLength={MAX_QUERY_LENGTH}
                     aria-describedby="search-hint"
                     readOnly={loading}
@@ -249,21 +242,14 @@ export default function ResearchWorkspace({ demoMode }: { demoMode: boolean }) {
                     {loading ? "Searching…" : "Search"} <Arrow />
                   </button>
                 </div>
-                <p id="search-hint" className={styles.hint}>Write naturally. A topic, a question, or an idea you want to explore.</p>
+                <p id="search-hint" className={styles.hint}>Search by topic or question. Up to 10 posts per search.</p>
               </form>
-              <div className={styles.prompts}>
-                <span>Try a thread</span>
-                {["Writing a newsletter consistently", "Making AI inference faster"].map((prompt) => (
-                  <button key={prompt} type="button" disabled={loading} onClick={() => { setQuery(prompt); inputRef.current?.focus(); }}>{prompt} <Arrow diagonal /></button>
-                ))}
-              </div>
             </section>
           </>
         ) : (
-          <section className={styles.hero} aria-labelledby="page-title">
-            <div className={styles.eyebrow}>YOUR PERSONAL READING SHELF</div>
+          <section className={styles.pageHeading} aria-labelledby="page-title">
             <h1 id="page-title">Saved articles</h1>
-            <p>A few good pieces to return to. Saved in this browser, on this device.</p>
+            <p>Saved in this browser, on this device.</p>
           </section>
         )}
 
@@ -272,20 +258,19 @@ export default function ResearchWorkspace({ demoMode }: { demoMode: boolean }) {
 
         <section className={styles.readingSection} aria-label={view === "saved" ? "Saved reading list" : "Search results"} aria-busy={view === "search" && loading}>
           <div className={styles.sectionHeading}>
-            <h2 ref={resultsHeadingRef} tabIndex={-1}>{view === "saved" ? "The reading list" : response ? response.mode === "demo" ? "Fixed example articles" : "Search results" : "Room for a new idea"}</h2>
-            <span>{view === "saved" ? `${articles.length} saved` : response ? `${articles.length} ${articles.length === 1 ? "article" : "articles"}` : "READ. REFLECT. RETURN."}</span>
+            <h2 ref={resultsHeadingRef} tabIndex={-1}>{view === "saved" ? "Reading list" : response?.mode === "demo" ? "Fixed example articles" : "Search results"}</h2>
+            {(view === "saved" || response) && <span>{view === "saved" ? `${articles.length} saved` : `${articles.length} ${articles.length === 1 ? "article" : "articles"}`}</span>}
           </div>
           {view === "search" && error ? (
             <div className={styles.feedback} role="alert">
-              <span className={styles.smallLabel}>A PAUSE, NOT A DEAD END</span>
-              <h3>Let’s try that again.</h3>
+              <h3>Search couldn’t finish.</h3>
               <p>{error}</p>
               <p className={styles.retryHint}>Your question is still in the field above. Select Search to retry.</p>
             </div>
           ) : view === "search" && loading ? (
             <div className={styles.feedback}>
               <span className={styles.loadingMark} aria-hidden="true" />
-              <h3>Following your thread…</h3>
+              <h3>Searching posts…</h3>
               <p>{demoMode ? "Opening the fixed example articles." : `Looking for articles on “${submittedQuery}”.`}</p>
             </div>
           ) : articles.length ? (
@@ -305,7 +290,7 @@ export default function ResearchWorkspace({ demoMode }: { demoMode: boolean }) {
                   </select>
                 </div>
               </div>
-              <p className={styles.resultsNote}>{view === "search" && response?.mode === "live" ? "Relevance follows Exa’s order. Up to 10 articles per search. " : ""}Dates sort by publication; undated articles appear last.</p>
+              {sorts[view] !== "relevance" && <p className={styles.resultsNote}>Sorted by publication date. Undated articles appear last.</p>}
               <div className={styles.articleList}>
                 {pagination.articles.map((article) => (
                   <ArticleCard key={articleIdentity(article.url)} article={article}
@@ -323,30 +308,22 @@ export default function ResearchWorkspace({ demoMode }: { demoMode: boolean }) {
             </>
           ) : view === "saved" ? (
             <div className={styles.feedback}>
-              <span className={styles.smallLabel}>KEEP THE GOOD FINDS CLOSE</span>
-              <h3>{storageReady ? "Your shelf is waiting." : "Opening your reading list…"}</h3>
+              <h3>{storageReady ? "No saved articles yet." : "Opening your reading list…"}</h3>
               <p>Choose Save on any search result to keep it here for later.</p>
-              <button className={styles.textButton} type="button" onClick={() => { setView("search"); }}>Explore articles <Arrow /></button>
+              <button className={styles.textButton} type="button" onClick={() => { setView("search"); }}>Search posts <Arrow /></button>
             </div>
           ) : response ? (
             <div className={styles.feedback}>
-              <span className={styles.smallLabel}>TRY ANOTHER ANGLE</span>
               <h3>No articles found.</h3>
               <p>Try a broader topic or a different phrasing. Your question is still above, ready to edit.</p>
             </div>
           ) : (
-            <div className={styles.startingState}>
-              <div className={styles.startIntro}><span className={styles.flourish} aria-hidden="true">↳</span><h3>Every good piece<br />starts with a question.</h3><p>Your next useful read might be one you weren’t looking for.</p></div>
-              <ol className={styles.steps}>
-                <li><span aria-hidden="true">01</span><div><h3>Start with a thought</h3><p>Ask a question or describe what you’re researching.</p></div></li>
-                <li><span aria-hidden="true">02</span><div><h3>Read a little wider</h3><p>Scan excerpts, then open the original for the full piece.</p></div></li>
-                <li><span aria-hidden="true">03</span><div><h3>Keep what resonates</h3><p>Save articles to build a small, thoughtful reading list.</p></div></li>
-              </ol>
+            <div className={styles.feedback}>
+              <p>Enter a topic or question above to find posts.</p>
             </div>
           )}
         </section>
       </main>
-      <footer className={styles.footer}><span>Made for the work before the writing.</span><span>Independent voices. Original sources.</span></footer>
     </div>
   );
 }

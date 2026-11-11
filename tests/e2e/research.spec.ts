@@ -347,3 +347,43 @@ test("removing the last saved page returns to the previous page", async ({ page 
   expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).length, STORAGE_KEY)).toBe(5);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
 });
+
+test("research desk keeps search near the top and results in one readable column", async ({ page }) => {
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Search Substack posts");
+  await expect(page.locator("ol")).toHaveCount(0);
+  const inputBox = (await field(page).boundingBox())!;
+  expect(inputBox.y + inputBox.height).toBeLessThan(430);
+  await search(page);
+  const rows = await page.getByRole("article").all();
+  const first = (await rows[0].boundingBox())!;
+  const second = (await rows[1].boundingBox())!;
+  expect(second.x).toBe(first.x);
+  expect(second.y).toBeGreaterThanOrEqual(first.y + first.height);
+  for (const row of rows) {
+    await expect(row.getByRole("heading", { level: 3 })).toBeVisible();
+    const save = row.getByRole("button", { name: "Save", exact: true });
+    expect((await save.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  }
+  await expect(rows[0]).toContainText(demoArticles[0].publication!);
+  await expect(rows[0]).toContainText(demoArticles[0].author!);
+});
+
+test("narrow screen handles long metadata and missing publication without overflow", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.route("**/api/search", (route) => route.fulfill({ json: {
+    mode: "live",
+    results: [
+      { ...demoArticles[0], title: "A".repeat(200), author: "B".repeat(200), publication: undefined },
+      { ...demoArticles[1], excerpt: undefined },
+    ],
+  } }));
+  await field(page).fill(question);
+  await submit(page).click();
+  await expect(page.getByRole("article")).toHaveCount(2);
+  await expect(page.getByRole("article").first()).toContainText("jamwithai.substack.com");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await page.getByRole("article").first().getByRole("button", { name: "Save", exact: true }).click();
+  await saved(page);
+  await expect(page.getByRole("article")).toHaveCount(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+});
