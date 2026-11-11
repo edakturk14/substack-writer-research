@@ -93,6 +93,15 @@ Or run it without a key using `DEMO_MODE=1 npm start`. Demo mode is read at
 server runtime, not baked into the build. Development and production servers
 bind to the Mac's loopback interface by default.
 
+### Development reload troubleshooting
+
+Next.js 16.4 has a reported Turbopack persistent-cache restart loop
+(`vercel/next.js#100267`). This project disables only the development filesystem
+cache as the upstream-documented workaround. Production build caching remains
+enabled. If upgrading an already-running checkout, restart `npm run dev` after
+pulling the configuration change; there is no need to delete saved browser data
+or change your Exa key.
+
 ## Coverage and storage
 
 - Search accepts trimmed natural-language questions of 1–300 characters.
