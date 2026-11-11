@@ -1,0 +1,46 @@
+name: Verify
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fixture-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DEMO_MODE: "1"
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - name: Check fixture and README links offline
+        run: node scripts/check-links.mjs
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Browser tests against demo production server
+        run: npm run test:e2e
+      - name: Preserve browser failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-diagnostics
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
