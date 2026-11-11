@@ -31,7 +31,11 @@ jobs:
       - name: Check fixture and README links offline
         run: node scripts/check-links.mjs
       - run: npm run build
-      - run: npx playwright install --with-deps chromium
+      # Hosted Ubuntu already includes Chromium's shared libraries. Avoid an
+      # unnecessary apt update (and unrelated font mirrors) on every test run.
+      - name: Install headless Chromium
+        run: npx playwright install --only-shell chromium
+        timeout-minutes: 3
       - name: Browser tests against demo production server
         run: npm run test:e2e
       - name: Preserve browser failure diagnostics
