@@ -38,6 +38,14 @@ jobs:
         timeout-minutes: 3
       - name: Browser tests against demo production server
         run: npm run test:e2e
+      - name: Preserve desktop and mobile screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-desk-screenshots
+          path: test-results/**/research-desk.png
+          retention-days: 30
+          if-no-files-found: error
       - name: Preserve browser failure diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
