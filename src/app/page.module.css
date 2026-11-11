@@ -1,10 +1,10 @@
 .page { max-width: 960px; margin: 0 auto; padding: 0 40px; }
 .header { min-height: 80px; display: flex; align-items: center; justify-content: space-between; gap: 24px; border-bottom: 1px solid var(--line); }
-.brandName { display: inline-flex; align-items: center; gap: 10px; font: 20px/1.3 var(--serif); }
+.brandName { display: inline-flex; align-items: center; gap: 10px; font: 20px/1.3 var(--serif); text-decoration: none; }
 .brandName::before { content: ""; flex: 0 0 24px; height: 24px; background: url("/writer-research.svg") center / contain no-repeat; }
 .navigation { display: flex; gap: 8px; align-items: center; }
-.navigation button { min-height: 44px; padding: 10px 12px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: 14px; }
-.navigation button[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+.navigation :is(button, a) { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 12px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: 14px; text-decoration: none; }
+.navigation :is([aria-pressed="true"], [aria-current="page"]) { color: var(--ink); border-bottom-color: var(--ink); }
 .count { margin-left: 6px; font-size: 13px; font-variant-numeric: tabular-nums; }
 .main { padding-bottom: 64px; }
 .pageHeading { padding: 32px 0 24px; }
@@ -60,7 +60,7 @@
 .skipLink:focus { transform: translateY(0); }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (hover: hover) {
-  .navigation button:hover, .saveButton:not(:disabled):hover, .pagination button:not(:disabled):hover { background: var(--surface); }
+  .navigation :is(button, a):hover, .saveButton:not(:disabled):hover, .pagination button:not(:disabled):hover { background: var(--surface); }
   .searchButton:not(:disabled):hover { background: var(--action-hover); }
   .cardActions a:hover { color: var(--ink); }
 }
@@ -69,7 +69,7 @@
   .header { flex-wrap: wrap; gap: 8px; padding: 20px 0 8px; }
   .brandName { width: 100%; }
   .navigation { gap: 16px; }
-  .navigation button { padding: 10px 0; }
+  .navigation :is(button, a) { padding: 10px 0; }
   .pageHeading { padding: 24px 0 20px; }
   .pageHeading h1 { font-size: 32px; letter-spacing: -.7px; }
   .inputRow { flex-direction: column; }

@@ -1,0 +1,22 @@
+.heading > p, .section > p { max-width: 65ch; font-size: 16px; line-height: 1.7; }
+.section { padding: 28px 0; border-top: 1px solid var(--line); }
+.section h2 { font: 26px/1.25 var(--serif); }
+.section > p { margin-top: 16px; }
+.section blockquote {
+  margin: 16px 0 24px;
+  padding: 14px 18px;
+  border-left: 2px solid var(--control-line);
+  background: var(--surface);
+  font: 20px/1.5 var(--serif);
+}
+.comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.comparison figure { display: flex; flex-direction: column; gap: 10px; margin: 0; }
+.comparison figcaption { flex: 1; line-height: 1.5; font-size: 14px; }
+.comparison figcaption span { display: block; margin-top: 4px; color: var(--muted); }
+.comparison a { display: block; overflow: hidden; border: 1px solid var(--line); border-radius: 3px; }
+.comparison img { display: block; width: 100%; height: auto; }
+.tryLink { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 8px; color: var(--link); text-underline-offset: 4px; }
+
+@media (max-width: 600px) {
+  .comparison { grid-template-columns: 1fr; gap: 24px; }
+}

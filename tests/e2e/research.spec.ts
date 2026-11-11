@@ -41,6 +41,40 @@ test.beforeEach(async ({ page, context, baseURL }) => {
   await page.goto("/");
 });
 
+test("the About comparison links to a prefilled search and the brand returns home", async ({ page }) => {
+  const brand = page.getByRole("link", { name: "Writer Research", exact: true });
+  const about = page.getByRole("link", { name: "About", exact: true });
+  await saved(page);
+  await brand.click();
+  await expect(view(page, "Search")).toHaveAttribute("aria-pressed", "true");
+
+  await about.click();
+  await expect(page).toHaveURL(/\/about$/);
+  await expect(about).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("heading", { name: "Why this search is different" })).toBeVisible();
+  for (const screenshot of await page.getByRole("img").all()) {
+    await screenshot.scrollIntoViewIfNeeded();
+    await expect.poll(() => screenshot.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
+  }
+  await expect(page.getByRole("img")).toHaveCount(2);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(await page.evaluate(() => window.innerWidth + 1));
+
+  const example = await page.locator("blockquote").innerText();
+  await page.getByRole("link", { name: "Try this question" }).click();
+  await expect(field(page)).toHaveValue(example);
+  await expect(page.getByRole("article")).toHaveCount(0);
+  await submit(page).click();
+  await expect(card(page)).toBeVisible();
+
+  await about.click();
+  await page.getByRole("link", { name: "Saved", exact: true }).click();
+  await expect(view(page, "Saved")).toHaveAttribute("aria-pressed", "true");
+  await about.click();
+  await brand.click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(view(page, "Search")).toHaveAttribute("aria-pressed", "true");
+});
+
 for (const method of ["button", "Enter"] as const) {
   test(`${method} submits one request and shows honest fixed examples`, async ({ page }) => {
     const requests: unknown[] = [];

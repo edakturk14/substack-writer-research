@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import SiteHeader from "@/components/site-header";
 import { articleIdentity, parseSearchResponse } from "@/lib/articles";
 import { MAX_QUERY_LENGTH, type Article, type SearchResponse } from "@/lib/contracts";
 import { articlePage, keywordMatch, PAGE_SIZE, shortExcerpt, sortArticles, type ArticleSort } from "@/lib/presentation";
@@ -94,9 +95,13 @@ function ArticleCard({ article, saved, savedView, onSave, onRemove, storageReady
   );
 }
 
-export default function ResearchWorkspace({ demoMode }: { demoMode: boolean }) {
-  const [view, setView] = useState<"search" | "saved">("search");
-  const [query, setQuery] = useState("");
+export default function ResearchWorkspace({ demoMode, initialQuery, initialView }: {
+  demoMode: boolean;
+  initialQuery: string;
+  initialView: "search" | "saved";
+}) {
+  const [view, setView] = useState(initialView);
+  const [query, setQuery] = useState(initialQuery);
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [response, setResponse] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -224,16 +229,12 @@ export default function ResearchWorkspace({ demoMode }: { demoMode: boolean }) {
 
   return (
     <div className={styles.page}>
-      <a className={styles.skipLink} href="#main">Skip to content</a>
-      <header className={styles.header}>
-        <span className={styles.brandName}>Writer Research</span>
-        <nav className={styles.navigation} aria-label="Workspace views">
-          <button type="button" aria-pressed={view === "search"} onClick={() => setView("search")}>Search</button>
-          <button type="button" aria-pressed={view === "saved"} onClick={() => setView("saved")}>
-            Saved <span className={styles.count} aria-hidden="true">{savedState.articles.length}</span>
-          </button>
-        </nav>
-      </header>
+      <SiteHeader onHome={() => setView("search")}>
+        <button type="button" aria-pressed={view === "search"} onClick={() => setView("search")}>Search</button>
+        <button type="button" aria-pressed={view === "saved"} onClick={() => setView("saved")}>
+          Saved <span className={styles.count} aria-hidden="true">{savedState.articles.length}</span>
+        </button>
+      </SiteHeader>
 
       <main id="main" className={styles.main}>
         {isDemo && <div className={styles.demoBanner}><span className={styles.demoDot} aria-hidden="true" /><strong>Demo mode</strong><span>Fixed examples, not live search results. Every question returns the same articles.</span></div>}
