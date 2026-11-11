@@ -1,9 +1,12 @@
 :root {
-  --paper: #f8f5ed;
-  --ink: #292720;
-  --muted: #676257;
-  --green: #365640;
-  --line: #d9d3c5;
+  --paper: #fff;
+  --ink: #202124;
+  --muted: #555960;
+  --line: #dddfe3;
+  --control-line: #858a93;
+  --surface: #f3f4f6;
+  --link: #28478e;
+  --action-hover: #383b42;
   --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
   color-scheme: light;
 }
@@ -23,8 +26,8 @@ button:disabled { cursor: not-allowed; }
 a { color: inherit; }
 button, input, select { min-width: 0; }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, [tabindex="-1"]:focus-visible {
-  outline: 3px solid #9a532e;
+  outline: 3px solid var(--link);
   outline-offset: 5px;
 }
-::selection { background: #dce7cf; color: #263d2c; }
+::selection { background: #dce6fa; color: var(--ink); }
 h1, h2, h3, p { margin: 0; }

@@ -1,4 +1,4 @@
-# Substack Writer Research
+# Writer Research
 
 Find what has already been written about an idea, read an original passage, and
 save articles for your next draft. One responsive page, with Search and Saved

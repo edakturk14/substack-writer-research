@@ -14,7 +14,11 @@ import {
 import styles from "@/app/page.module.css";
 
 function Arrow({ diagonal = false }: { diagonal?: boolean }) {
-  return <span aria-hidden="true">{diagonal ? "↗" : "→"}</span>;
+  return (
+    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d={diagonal ? "M4 12 12 4M6 4h6v6" : "M2 8h11m-5-5 5 5-5 5"} />
+    </svg>
+  );
 }
 
 function safeSearchError(status: number, body: unknown): string {
@@ -205,7 +209,7 @@ export default function ResearchWorkspace({ demoMode }: { demoMode: boolean }) {
     <div className={styles.page}>
       <a className={styles.skipLink} href="#main">Skip to content</a>
       <header className={styles.header}>
-        <span className={styles.brandName}>Substack Writer Research</span>
+        <span className={styles.brandName}>Writer Research</span>
         <nav className={styles.navigation} aria-label="Workspace views">
           <button type="button" aria-pressed={view === "search"} onClick={() => setView("search")}>Search</button>
           <button type="button" aria-pressed={view === "saved"} onClick={() => setView("saved")}>
