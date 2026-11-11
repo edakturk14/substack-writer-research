@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -11,7 +12,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        {process.env.VERCEL_ENV === "production" ? <Analytics /> : null}
+      </body>
     </html>
   );
 }
