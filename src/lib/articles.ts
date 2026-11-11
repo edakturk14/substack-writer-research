@@ -75,6 +75,7 @@ export function parseArticle(value: unknown): Article | null {
   if (author) article.author = author;
   if (publication) article.publication = publication;
   if (publishedDate) article.publishedDate = publishedDate;
+  if (value.paid === true) article.paid = true;
   return article;
 }
 

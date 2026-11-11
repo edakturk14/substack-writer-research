@@ -7,6 +7,7 @@ export type Article = {
   author?: string;
   publication?: string;
   publishedDate?: string;
+  paid?: true;
 };
 
 export type SearchResponse = {

@@ -181,6 +181,19 @@ test("Open original navigates to the exact source without an Internet request", 
   }
 });
 
+test("shows a paid label before opening the article and keeps it after saving", async ({ page }) => {
+  await page.route("**/api/search", (route) => route.fulfill({
+    json: { ...demoResponse, results: [{ ...demoArticles[0], paid: true }, demoArticles[1]] },
+  }));
+  await search(page);
+  await expect(card(page).getByTitle("Full post is for paid subscribers")).toHaveText("$ Paid");
+  await expect(card(page, 1).getByTitle("Full post is for paid subscribers")).toHaveCount(0);
+  await card(page).getByRole("button", { name: "Save", exact: true }).click();
+  await page.reload();
+  await saved(page);
+  await expect(card(page).getByTitle("Full post is for paid subscribers")).toBeVisible();
+});
+
 for (const value of ["{broken", JSON.stringify({ wrong: "shape" })]) {
   test(`corrupt saved storage is recoverable (${value})`, async ({ page }) => {
     await seedStorage(page, value);

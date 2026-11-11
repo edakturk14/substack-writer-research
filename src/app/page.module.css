@@ -33,6 +33,7 @@
 .article h3 { grid-column: 1; font: 27px/1.3 var(--serif); letter-spacing: -.3px; }
 .metadata { grid-column: 1; display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 10px; font-size: 13px; line-height: 1.6; color: var(--muted); }
 .publication { color: var(--ink); font-weight: 600; }
+.paid { color: var(--ink); font-weight: 600; white-space: nowrap; }
 .excerpt { grid-column: 1; max-width: 66ch; margin-top: 16px; font-size: 16px; line-height: 1.75; white-space: pre-line; }
 .cardActions { display: contents; }
 .cardActions a { grid-column: 1; justify-self: start; display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; min-height: 44px; color: var(--link); font-size: 14px; text-decoration: underline; text-underline-offset: 4px; }

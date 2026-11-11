@@ -112,6 +112,7 @@ function parseProviderResponse(value: unknown): SearchResponse {
     if (!article) return null;
     // Never substitute generated summaries, full text, or provider HTML.
     delete article.excerpt;
+    delete article.paid;
     if (Array.isArray(item.highlights)) {
       for (const highlight of item.highlights.slice(0, 100)) {
         const excerpt = parseArticle({ ...article, excerpt: highlight })?.excerpt;

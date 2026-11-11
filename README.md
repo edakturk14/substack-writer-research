@@ -117,7 +117,8 @@ or change your Exa key.
   Slugs must use ASCII letters, numbers, hyphens, or underscores; nested
   subdomains and encoded slugs are excluded. Custom
   publication domains, Notes, profiles, archives, home pages, and comment-only
-  pages are excluded. Some posts may require a subscription to read in full.
+  pages are excluded. Cards show **$ Paid** when a publication's public post
+  metadata confirms paid access. When the lookup is unavailable, access is unverified.
 - Results retain provider order after URL validation and deduplication. Links
   point to the validated original provider URL, never an inferred destination.
   Highlights are provider passages rendered as plain text, not summaries.

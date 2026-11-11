@@ -55,6 +55,7 @@ function ArticleCard({ article, saved, savedView, onSave, onRemove, storageReady
     <article className={styles.article}>
       <h3>{article.title}</h3>
       <div className={styles.metadata}>
+        {article.paid && <span className={styles.paid} title="Full post is for paid subscribers"><span aria-hidden="true">$</span> Paid</span>}
         <span className={styles.publication}>{article.publication || new URL(article.url).hostname}</span>
         {article.author && <span>By {article.author}</span>}
         {date && <time dateTime={article.publishedDate}>{date}</time>}
