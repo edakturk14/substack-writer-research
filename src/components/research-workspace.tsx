@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { articleIdentity, parseSearchResponse } from "@/lib/articles";
 import { MAX_QUERY_LENGTH, type Article, type SearchResponse } from "@/lib/contracts";
+import { articlePage, PAGE_SIZE, shortExcerpt, sortArticles, type ArticleSort } from "@/lib/presentation";
 import {
   readSavedArticles,
   SAVED_STORAGE_KEY,
@@ -56,7 +57,7 @@ function ArticleCard({ article, saved, savedView, onSave, onRemove, storageReady
       )}
       <h3>{article.title}</h3>
       {article.author && <p className={styles.byline}>By {article.author}</p>}
-      {article.excerpt && <p className={styles.excerpt}>{article.excerpt}</p>}
+      {article.excerpt && <p className={styles.excerpt}>{shortExcerpt(article.excerpt)}</p>}
       <div className={styles.cardActions}>
         <a href={article.url} target="_blank" rel="noopener noreferrer" title="Opens in a new tab">
           Open original <Arrow diagonal />
@@ -85,7 +86,10 @@ export default function ResearchWorkspace({ demoMode }: { demoMode: boolean }) {
   const [savedState, setSavedState] = useState<SavedState>({ articles: [], warning: null });
   const [storageReady, setStorageReady] = useState(false);
   const [saveNotice, setSaveNotice] = useState("");
+  const [pages, setPages] = useState({ search: 1, saved: 1 });
+  const [sorts, setSorts] = useState<{ search: ArticleSort; saved: ArticleSort }>({ search: "relevance", saved: "relevance" });
   const inputRef = useRef<HTMLInputElement>(null);
+  const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
   const requestRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -124,6 +128,7 @@ export default function ResearchWorkspace({ demoMode }: { demoMode: boolean }) {
     setLoading(true);
     setError(null);
     setResponse(null);
+    setPages((previous) => ({ ...previous, search: 1 }));
     setSubmittedQuery(trimmed);
     const timeout = window.setTimeout(() => controller.abort(), 30000);
     try {
@@ -170,6 +175,10 @@ export default function ResearchWorkspace({ demoMode }: { demoMode: boolean }) {
       const result = writeSavedArticles(window.localStorage, next);
       if (result.success) {
         setSavedState(result.state);
+        setPages((previous) => ({
+          ...previous,
+          saved: Math.min(previous.saved, Math.max(1, Math.ceil(result.state.articles.length / PAGE_SIZE))),
+        }));
         setSaveNotice(remove ? "Article removed from your reading list." : "Article saved to your reading list.");
       } else {
         setSavedState((previous) => ({ ...previous, warning: result.state.warning }));
@@ -181,6 +190,12 @@ export default function ResearchWorkspace({ demoMode }: { demoMode: boolean }) {
 
   const isDemo = demoMode || response?.mode === "demo";
   const articles = view === "saved" ? savedState.articles : response?.results ?? [];
+  const pagination = articlePage(sortArticles(articles, sorts[view]), pages[view]);
+  const changePage = (page: number) => {
+    setPages((previous) => ({ ...previous, [view]: page }));
+    resultsHeadingRef.current?.focus({ preventScroll: true });
+    resultsHeadingRef.current?.scrollIntoView({ block: "start" });
+  };
   const savedIds = new Set(savedState.articles.map((article) => articleIdentity(article.url)));
   const statusText = loading
     ? "Searching for articles. Your question is still here."
@@ -257,7 +272,7 @@ export default function ResearchWorkspace({ demoMode }: { demoMode: boolean }) {
 
         <section className={styles.readingSection} aria-label={view === "saved" ? "Saved reading list" : "Search results"} aria-busy={view === "search" && loading}>
           <div className={styles.sectionHeading}>
-            <h2>{view === "saved" ? "The reading list" : response ? response.mode === "demo" ? "Fixed example articles" : "Search results" : "Room for a new idea"}</h2>
+            <h2 ref={resultsHeadingRef} tabIndex={-1}>{view === "saved" ? "The reading list" : response ? response.mode === "demo" ? "Fixed example articles" : "Search results" : "Room for a new idea"}</h2>
             <span>{view === "saved" ? `${articles.length} saved` : response ? `${articles.length} ${articles.length === 1 ? "article" : "articles"}` : "READ. REFLECT. RETURN."}</span>
           </div>
           {view === "search" && error ? (
@@ -276,13 +291,35 @@ export default function ResearchWorkspace({ demoMode }: { demoMode: boolean }) {
           ) : articles.length ? (
             <>
               {view === "search" && response?.mode === "live" && <p className={styles.querySummary}>For “{submittedQuery}”</p>}
+              <div className={styles.resultsToolbar}>
+                <p role="status">Showing {pagination.start + 1}–{pagination.start + pagination.articles.length} of {articles.length}</p>
+                <div className={styles.sortControl}>
+                  <label htmlFor="article-sort">Sort by</label>
+                  <select id="article-sort" value={sorts[view]} onChange={(event) => {
+                    setSorts((previous) => ({ ...previous, [view]: event.target.value as ArticleSort }));
+                    setPages((previous) => ({ ...previous, [view]: 1 }));
+                  }}>
+                    <option value="relevance">{view === "saved" ? "Saved order" : response?.mode === "demo" ? "Example order" : "Relevance"}</option>
+                    <option value="newest">Newest first</option>
+                    <option value="oldest">Oldest first</option>
+                  </select>
+                </div>
+              </div>
+              <p className={styles.resultsNote}>{view === "search" && response?.mode === "live" ? "Relevance follows Exa’s order. Up to 10 articles per search. " : ""}Dates sort by publication; undated articles appear last.</p>
               <div className={styles.articleList}>
-                {articles.map((article) => (
+                {pagination.articles.map((article) => (
                   <ArticleCard key={articleIdentity(article.url)} article={article}
                     saved={savedIds.has(articleIdentity(article.url))} savedView={view === "saved"}
                     storageReady={storageReady} onSave={() => updateSaved(article, false)} onRemove={() => updateSaved(article, true)} />
                 ))}
               </div>
+              {pagination.pageCount > 1 && (
+                <nav className={styles.pagination} aria-label="Article pages">
+                  <button type="button" disabled={pagination.page === 1} onClick={() => changePage(pagination.page - 1)}>Previous</button>
+                  <span aria-live="polite">Page {pagination.page} of {pagination.pageCount}</span>
+                  <button type="button" disabled={pagination.page === pagination.pageCount} onClick={() => changePage(pagination.page + 1)}>Next</button>
+                </nav>
+              )}
             </>
           ) : view === "saved" ? (
             <div className={styles.feedback}>

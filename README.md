@@ -4,6 +4,13 @@ Find what has already been written about an idea, read an original passage, and
 save articles for your next draft. One responsive page, with Search and Saved
 views. No generated summaries, accounts, database, or recommendations.
 
+Sort search results by **Relevance**, **Newest first**, or **Oldest first**.
+Cards show a plain-text excerpt of at most 300 characters. Search and Saved show
+five articles per page, with Previous/Next controls when needed. Sorting and
+paging use the already-fetched results, not additional Exa requests. Relevance
+restores provider order; undated articles stay last in either date order.
+Saved has its own Saved order/date sorting. A new search or sort starts at page 1.
+
 ## Run on your Mac
 
 Use **Node.js 24 LTS** (tested with **24.22.2**, pinned in `.nvmrc`) and its bundled

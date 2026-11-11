@@ -58,7 +58,12 @@ for (const method of ["button", "Enter"] as const) {
     expect(requests).toEqual([{ query: question }]);
     for (const [index, article] of demoArticles.entries()) {
       await expect(card(page, index)).toContainText(article.title);
-      await expect(card(page, index)).toContainText(article.excerpt!);
+      const passage = card(page, index).getByText(article.excerpt!.slice(0, 80), { exact: false });
+      await expect(passage).toBeVisible();
+      const displayed = (await passage.textContent())!;
+      expect(Array.from(displayed).length).toBeLessThanOrEqual(300);
+      expect(article.excerpt!.startsWith(displayed.replace(/…$/, ""))).toBe(true);
+      if (article.excerpt!.length <= 300) expect(displayed).toBe(article.excerpt);
       await expect(card(page, index).getByRole("link", { name: originalLinkName }))
         .toHaveAttribute("href", article.url);
     }
@@ -114,12 +119,13 @@ for (const failure of ["HTTP error", "network failure", "malformed JSON", "inval
     });
     await field(page).fill(question);
     await submit(page).click();
-    await expect(page.getByRole("alert")).toBeVisible();
+    const searchError = page.getByRole("region", { name: "Search results", exact: true }).getByRole("alert");
+    await expect(searchError).toBeVisible();
     await expect(page.getByRole("article")).toHaveCount(0);
     await expect(field(page)).toHaveValue(question);
     await page.unroute("**/api/search");
     await search(page);
-    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(searchError).toHaveCount(0);
   });
 }
 
@@ -267,4 +273,77 @@ test("keyboard focus reaches search and card actions without horizontal overflow
   await saved(page);
   expect(await page.evaluate(() =>
     document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+});
+
+// Public URLs already source-checked; titles/dates below are synthetic test data.
+const paginatedArticles = [
+  demoArticles[0].url,
+  demoArticles[1].url,
+  "https://codelikeagirl.substack.com/p/the-messy-reality-of-ai-products",
+  "https://ebpfchirp.substack.com/p/11-second-time-to-first-token-on",
+  "https://agentautopsies.substack.com/p/agent-autopsy-the-context-strategy",
+  "https://howitships.substack.com/p/streaming-feels-slow-even-when-it",
+  "https://zohaibdr.substack.com/p/production-ai-chatbots",
+].map((url, index) => ({
+  url,
+  title: `Result ${index + 1}`,
+  excerpt: "A passage supplied by the provider. ".repeat(25),
+  publishedDate: ["2023-01-01", undefined, "2026-11-10", "2024-01-01", "2025-01-01", "2026-01-01", "2026-10-01"][index],
+}));
+
+test("sorting and paging are local, stable, and preserve saved identity", async ({ page }) => {
+  let requests = 0;
+  await page.route("**/api/search", (route) => {
+    requests++;
+    return route.fulfill({ json: { mode: "live", results: paginatedArticles } });
+  });
+  await field(page).fill(question);
+  await submit(page).click();
+  const headings = page.getByRole("article").getByRole("heading");
+  await expect(headings).toHaveText(["Result 1", "Result 2", "Result 3", "Result 4", "Result 5"]);
+  await expect(page.getByRole("button", { name: "Previous", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(headings).toHaveText(["Result 6", "Result 7"]);
+  await expect(page.getByRole("button", { name: "Next", exact: true })).toBeDisabled();
+  await page.getByRole("article").filter({ hasText: "Result 6" }).getByRole("button", { name: "Save", exact: true }).click();
+  await saved(page);
+  await expect(headings).toHaveText(["Result 6"]);
+  await view(page, "Search").click();
+  await expect(headings).toHaveText(["Result 6", "Result 7"]);
+  await page.getByLabel("Sort by").selectOption("newest");
+  await expect(headings).toHaveText(["Result 3", "Result 7", "Result 6", "Result 5", "Result 4"]);
+  await expect(page.getByText("Page 1 of 2")).toBeVisible();
+  await expect(page.getByRole("article").filter({ hasText: "Result 6" }).getByRole("button", { name: "Saved", exact: true })).toBeVisible();
+  await page.getByLabel("Sort by").selectOption("oldest");
+  await expect(headings).toHaveText(["Result 1", "Result 4", "Result 5", "Result 6", "Result 7"]);
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(headings).toHaveText(["Result 3", "Result 2"]);
+  await page.getByLabel("Sort by").selectOption("relevance");
+  await expect(headings).toHaveText(["Result 1", "Result 2", "Result 3", "Result 4", "Result 5"]);
+  expect(requests).toBe(1);
+  const excerpts = await page.locator("article p").allTextContents();
+  expect(excerpts.every((text) => Array.from(text).length <= 300 && text.endsWith("…"))).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await field(page).fill("Another question");
+  await field(page).press("Enter");
+  await expect(headings).toHaveText(["Result 1", "Result 2", "Result 3", "Result 4", "Result 5"]);
+  expect(requests).toBe(2);
+});
+
+test("removing the last saved page returns to the previous page", async ({ page }) => {
+  await seedStorage(page, JSON.stringify(paginatedArticles));
+  await page.reload();
+  await saved(page);
+  await page.getByLabel("Sort by").selectOption("newest");
+  await expect(page.getByRole("article").first()).toContainText("Result 3");
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(page.getByRole("article")).toHaveCount(2);
+  await page.getByRole("article").first().getByRole("button", { name: "Remove", exact: true }).click();
+  await expect(page.getByRole("article")).toHaveCount(1);
+  await page.getByRole("article").first().getByRole("button", { name: "Remove", exact: true }).click();
+  await expect(page.getByRole("article")).toHaveCount(5);
+  await expect(page.getByRole("navigation", { name: "Article pages" })).toHaveCount(0);
+  expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).length, STORAGE_KEY)).toBe(5);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
 });

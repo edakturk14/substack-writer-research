@@ -35,6 +35,14 @@
 .sectionHeading { padding: 23px 0; display: flex; align-items: baseline; justify-content: space-between; gap: 18px; }
 .sectionHeading h2 { font-size: 14px; font-weight: 500; }
 .sectionHeading > span { color: var(--muted); font-size: 10px; letter-spacing: .8px; }
+.sectionHeading h2 { scroll-margin-top: 24px; }
+.resultsToolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; font-size: 12px; color: var(--muted); }
+.sortControl { display: flex; align-items: center; gap: 10px; }
+.sortControl select { max-width: 100%; min-height: 42px; padding: 9px 30px 9px 11px; border: 1px solid var(--line); border-radius: 4px; background: #fffef9; color: var(--green); font: inherit; }
+.resultsNote { margin-bottom: 20px; color: var(--muted); font-size: 11px; line-height: 1.7; }
+.pagination { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 26px; color: var(--muted); font-size: 12px; }
+.pagination button { min-height: 44px; padding: 10px 16px; border: 1px solid var(--line); border-radius: 4px; background: #fffef9; color: var(--green); font: inherit; }
+.pagination button:disabled { color: var(--muted); opacity: .6; }
 .startingState { display: grid; grid-template-columns: 1fr 1.12fr; gap: 60px; padding: 38px 42px 41px; border: 1px solid var(--line); border-radius: 5px; background: #f0f1e7; }
 .flourish { display: block; color: #7a866a; font: 36px/1 var(--serif); margin-bottom: 18px; }
 .startIntro h3 { font: 29px/1.25 var(--serif); letter-spacing: -.5px; }
