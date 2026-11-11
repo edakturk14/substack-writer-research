@@ -8,6 +8,9 @@ export type Article = {
   publication?: string;
   publishedDate?: string;
   paid?: true;
+  likes?: number;
+  reactions?: number;
+  comments?: number;
 };
 
 export type SearchResponse = {

@@ -28,6 +28,9 @@
 .sortControl { display: flex; align-items: center; gap: 8px; }
 .sortControl select { max-width: 100%; min-height: 44px; padding: 8px 28px 8px 10px; border: 1px solid var(--line); border-radius: 3px; background: transparent; color: var(--ink); font: inherit; }
 .resultsNote { margin-bottom: 16px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.rankingDetails { margin-bottom: 16px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.rankingDetails summary { cursor: pointer; width: fit-content; color: var(--link); }
+.rankingDetails p { margin-top: 6px; max-width: 68ch; }
 .articleList { display: flex; flex-direction: column; }
 .article { display: grid; grid-template-columns: minmax(0, 1fr) 88px; column-gap: 32px; padding: 28px 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
 .article h3 { grid-column: 1; font: 27px/1.3 var(--serif); letter-spacing: -.3px; }

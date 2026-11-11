@@ -1,7 +1,7 @@
 import { MAX_QUERY_LENGTH, type SearchErrorResponse } from "@/lib/contracts";
 import { demoResponse } from "@/lib/fixtures";
 import { readBoundedJson, searchExa, SearchError, withDeadline } from "@/lib/exa";
-import { markPaidArticles } from "@/lib/substack-access";
+import { enrichSubstackArticles } from "@/lib/substack-access";
 
 export const runtime = "nodejs";
 
@@ -38,7 +38,7 @@ export async function POST(request: Request): Promise<Response> {
       throw new SearchError("INVALID_QUERY", "Enter a research question of 1–300 characters.", 400);
     }
     const result = process.env.DEMO_MODE === "1" ? demoResponse : await searchExa(query);
-    if (result.mode === "live") result.results = await markPaidArticles(result.results);
+    if (result.mode === "live") result.results = await enrichSubstackArticles(result.results);
     return Response.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return failure(error instanceof SearchError ? error : new SearchError(

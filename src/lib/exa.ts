@@ -107,14 +107,11 @@ function parseProviderResponse(value: unknown): SearchResponse {
   }
   const candidates = value.results.map((result: unknown) => {
     if (result === null || typeof result !== "object" || Array.isArray(result)) return null;
-    const item = result as Record<string, unknown>;
-    const article = parseArticle(item);
+    const { url, title, author, publication, publishedDate, highlights } = result as Record<string, unknown>;
+    const article = parseArticle({ url, title, author, publication, publishedDate });
     if (!article) return null;
-    // Never substitute generated summaries, full text, or provider HTML.
-    delete article.excerpt;
-    delete article.paid;
-    if (Array.isArray(item.highlights)) {
-      for (const highlight of item.highlights.slice(0, 100)) {
+    if (Array.isArray(highlights)) {
+      for (const highlight of highlights.slice(0, 100)) {
         const excerpt = parseArticle({ ...article, excerpt: highlight })?.excerpt;
         if (excerpt) {
           article.excerpt = excerpt;

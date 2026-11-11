@@ -4,6 +4,22 @@ export const PAGE_SIZE = 5;
 export const EXCERPT_LENGTH = 300;
 export type ArticleSort = "relevance" | "newest" | "oldest";
 
+const COMMON_QUERY_WORDS = new Set(
+  "a about an and are as at be by can could did do does find for from had has have how i in is it me of on or please show should tell than that the their them there they this to was were what when where which who why will with would you your".split(" "),
+);
+
+function words(text: string): string[] {
+  return text.normalize("NFKC").toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+}
+
+export function keywordMatch(query: string, title: string, excerpt = ""): number | null {
+  const terms = [...new Set(words(query).filter((word) => !COMMON_QUERY_WORDS.has(word)))];
+  if (!terms.length) return null;
+  const articleWords = new Set(words(`${title} ${excerpt}`));
+  const matched = terms.filter((term) => articleWords.has(term)).length;
+  return Math.round(100 * matched / terms.length);
+}
+
 export function shortExcerpt(text: string): string {
   const characters = Array.from(text.trim());
   if (characters.length <= EXCERPT_LENGTH) return text.trim();

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { articleIdentity, parseSearchResponse } from "@/lib/articles";
 import { MAX_QUERY_LENGTH, type Article, type SearchResponse } from "@/lib/contracts";
-import { articlePage, PAGE_SIZE, shortExcerpt, sortArticles, type ArticleSort } from "@/lib/presentation";
+import { articlePage, keywordMatch, PAGE_SIZE, shortExcerpt, sortArticles, type ArticleSort } from "@/lib/presentation";
 import {
   readSavedArticles,
   SAVED_STORAGE_KEY,
@@ -42,15 +42,27 @@ function dateLabel(value: string): string | null {
     : date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 }
 
-function ArticleCard({ article, saved, savedView, onSave, onRemove, storageReady }: {
+const numberFormat = new Intl.NumberFormat("en-US");
+
+function countLabel(count: number | undefined, singular: string): string | undefined {
+  if (count === undefined) return;
+  return `${numberFormat.format(count)} ${singular}${count === 1 ? "" : "s"}`;
+}
+
+function ArticleCard({ article, saved, savedView, onSave, onRemove, storageReady, matchQuery }: {
   article: Article;
   saved: boolean;
   savedView: boolean;
   onSave: () => void;
   onRemove: () => void;
   storageReady: boolean;
+  matchQuery: string | null;
 }) {
   const date = article.publishedDate ? dateLabel(article.publishedDate) : null;
+  const excerpt = article.excerpt ? shortExcerpt(article.excerpt) : undefined;
+  const engagement = countLabel(article.likes, "like") ?? countLabel(article.reactions, "reaction");
+  const comments = countLabel(article.comments, "comment");
+  const match = matchQuery ? keywordMatch(matchQuery, article.title, excerpt) : null;
   return (
     <article className={styles.article}>
       <h3>{article.title}</h3>
@@ -59,8 +71,11 @@ function ArticleCard({ article, saved, savedView, onSave, onRemove, storageReady
         <span className={styles.publication}>{article.publication || new URL(article.url).hostname}</span>
         {article.author && <span>By {article.author}</span>}
         {date && <time dateTime={article.publishedDate}>{date}</time>}
+        {engagement && <span>{engagement}</span>}
+        {comments && <span>{comments}</span>}
+        {match !== null && <span>{match}% keyword match</span>}
       </div>
-      {article.excerpt && <p className={styles.excerpt}>{shortExcerpt(article.excerpt)}</p>}
+      {excerpt && <p className={styles.excerpt}>{excerpt}</p>}
       <div className={styles.cardActions}>
         <a href={article.url} target="_blank" rel="noopener noreferrer" title="Opens in a new tab">
           Open original <Arrow diagonal />
@@ -192,6 +207,7 @@ export default function ResearchWorkspace({ demoMode }: { demoMode: boolean }) {
   }
 
   const isDemo = demoMode || response?.mode === "demo";
+  const matchQuery = view === "search" && response?.mode === "live" ? submittedQuery : null;
   const articles = view === "saved" ? savedState.articles : response?.results ?? [];
   const pagination = articlePage(sortArticles(articles, sorts[view]), pages[view]);
   const changePage = (page: number) => {
@@ -296,11 +312,18 @@ export default function ResearchWorkspace({ demoMode }: { demoMode: boolean }) {
                 </div>
               </div>
               {sorts[view] !== "relevance" && <p className={styles.resultsNote}>Sorted by publication date. Undated articles appear last.</p>}
+              {matchQuery && (
+                <details className={styles.rankingDetails}>
+                  <summary>How ranking works</summary>
+                  <p>Relevance follows Exa’s search order. Keyword match is the share of unique query words found in the title or shown excerpt, after common words are removed. Likes and comments are shown for context.</p>
+                </details>
+              )}
               <div className={styles.articleList}>
                 {pagination.articles.map((article) => (
                   <ArticleCard key={articleIdentity(article.url)} article={article}
                     saved={savedIds.has(articleIdentity(article.url))} savedView={view === "saved"}
-                    storageReady={storageReady} onSave={() => updateSaved(article, false)} onRemove={() => updateSaved(article, true)} />
+                    matchQuery={matchQuery} storageReady={storageReady}
+                    onSave={() => updateSaved(article, false)} onRemove={() => updateSaved(article, true)} />
                 ))}
               </div>
               {pagination.pageCount > 1 && (

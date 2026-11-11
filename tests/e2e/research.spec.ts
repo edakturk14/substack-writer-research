@@ -194,6 +194,32 @@ test("shows a paid label before opening the article and keeps it after saving", 
   await expect(card(page).getByTitle("Full post is for paid subscribers")).toBeVisible();
 });
 
+test("shows engagement and keyword match without changing relevance order", async ({ page }) => {
+  await page.route("**/api/search", (route) => route.fulfill({ json: {
+    mode: "live",
+    results: [
+      { ...demoArticles[0], title: "Latency lessons", excerpt: "From a real project.", likes: 7, comments: 0 },
+      { ...demoArticles[1], title: "AI inference latency", reactions: 4, comments: 1 },
+    ],
+  } }));
+  await field(page).fill("AI inference latency");
+  await submit(page).click();
+  const first = page.getByRole("article").first();
+  const second = page.getByRole("article").nth(1);
+  await expect(first).toContainText("33% keyword match");
+  await expect(first).toContainText("7 likes");
+  await expect(first).toContainText("0 comments");
+  await expect(second).toContainText("100% keyword match");
+  await expect(second).toContainText("4 reactions");
+  await expect(second).toContainText("1 comment");
+  await page.getByText("How ranking works", { exact: true }).click();
+  await expect(page.getByText(/Relevance follows Exa/)).toBeVisible();
+  await first.getByRole("button", { name: "Save", exact: true }).click();
+  await saved(page);
+  await expect(page.getByRole("article")).toContainText("7 likes");
+  await expect(page.getByText(/keyword match/i)).toHaveCount(0);
+});
+
 for (const value of ["{broken", JSON.stringify({ wrong: "shape" })]) {
   test(`corrupt saved storage is recoverable (${value})`, async ({ page }) => {
     await seedStorage(page, value);

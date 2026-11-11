@@ -61,6 +61,10 @@ function date(value: unknown): string | undefined {
   return Number.isFinite(Date.parse(value)) ? value : undefined;
 }
 
+function count(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : undefined;
+}
+
 export function parseArticle(value: unknown): Article | null {
   if (!record(value)) return null;
   const url = validateArticleUrl(value.url);
@@ -76,6 +80,12 @@ export function parseArticle(value: unknown): Article | null {
   if (publication) article.publication = publication;
   if (publishedDate) article.publishedDate = publishedDate;
   if (value.paid === true) article.paid = true;
+  const likes = count(value.likes);
+  const reactions = count(value.reactions);
+  const comments = count(value.comments);
+  if (likes !== undefined) article.likes = likes;
+  else if (reactions !== undefined) article.reactions = reactions;
+  if (comments !== undefined) article.comments = comments;
   return article;
 }
 

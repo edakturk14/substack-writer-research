@@ -119,6 +119,10 @@ or change your Exa key.
   publication domains, Notes, profiles, archives, home pages, and comment-only
   pages are excluded. Cards show **$ Paid** when a publication's public post
   metadata confirms paid access. When the lookup is unavailable, access is unverified.
+- Cards show likes and comments when Substack supplies them. Aggregate reaction
+  totals are labeled **reactions**. The keyword match percentage compares unique
+  query words with the title and displayed excerpt, ignoring common words.
+  **Relevance** uses Exa's returned order.
 - Results retain provider order after URL validation and deduplication. Links
   point to the validated original provider URL, never an inferred destination.
   Highlights are provider passages rendered as plain text, not summaries.

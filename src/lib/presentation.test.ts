@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { Article } from "./contracts";
-import { articlePage, EXCERPT_LENGTH, shortExcerpt, sortArticles } from "./presentation";
+import { articlePage, EXCERPT_LENGTH, keywordMatch, shortExcerpt, sortArticles } from "./presentation";
 
 const articles: Article[] = [
   { url: "https://example.substack.com/p/first", title: "First", publishedDate: "2024-01-01" },
@@ -10,6 +10,16 @@ const articles: Article[] = [
   { url: "https://example.substack.com/p/fifth", title: "Fifth", publishedDate: "invalid" },
 ];
 const titles = (items: Article[]) => items.map((item) => item.title);
+
+describe("keyword match", () => {
+  test("counts unique query words across the title and excerpt, case insensitively", () => {
+    expect(keywordMatch("How does AI inference latency affect latency?", "AI inference", "LATENCY matters.")).toBe(75);
+  });
+  test("matches whole words and skips queries with no keywords", () => {
+    expect(keywordMatch("AI", "A daily roundup")).toBe(0);
+    expect(keywordMatch("How is it?", "An article")).toBeNull();
+  });
+});
 
 describe("article ordering", () => {
   test("relevance preserves provider order without mutating the input", () => {

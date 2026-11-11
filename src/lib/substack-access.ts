@@ -1,11 +1,11 @@
 import "server-only";
-import { validateArticleUrl } from "./articles";
+import { parseArticle, validateArticleUrl } from "./articles";
 import type { Article } from "./contracts";
 import { readBoundedJson, SearchError, withDeadline } from "./exa";
 
-const unavailable = () => new SearchError("ARTICLE_ACCESS_UNAVAILABLE", "Could not check article access.", 502);
+const unavailable = () => new SearchError("ARTICLE_METADATA_UNAVAILABLE", "Could not check Substack post details.", 502);
 
-async function markPaidArticle(article: Article): Promise<Article> {
+async function enrichArticle(article: Article): Promise<Article> {
   const validated = validateArticleUrl(article.url);
   if (!validated) return article;
 
@@ -30,16 +30,24 @@ async function markPaidArticle(article: Article): Promise<Article> {
       return readBoundedJson(response, 1024 * 1024, signal, unavailable);
     }, 1500, unavailable);
 
-    if (metadata && typeof metadata === "object" && "slug" in metadata && metadata.slug === slug &&
-      "audience" in metadata && (metadata.audience === "only_paid" || metadata.audience === "founding")) {
-      return { ...article, paid: true };
-    }
+    if (!metadata || typeof metadata !== "object" || !("slug" in metadata) || metadata.slug !== slug) return article;
+    const post = metadata as Record<string, unknown>;
+    const breakdown = post.reactions && typeof post.reactions === "object"
+      ? post.reactions as Record<string, unknown>
+      : {};
+    return parseArticle({
+      ...article,
+      paid: post.audience === "only_paid" || post.audience === "founding",
+      likes: breakdown["❤"] ?? breakdown["❤️"] ?? (post.reaction_count === 0 ? 0 : undefined),
+      reactions: post.reaction_count,
+      comments: post.comment_count,
+    }) ?? article;
   } catch {
-    // An unavailable access check should not prevent the search from working.
+    // An unavailable Substack lookup should not prevent the search from working.
   }
   return article;
 }
 
-export function markPaidArticles(articles: Article[]): Promise<Article[]> {
-  return Promise.all(articles.map(markPaidArticle));
+export function enrichSubstackArticles(articles: Article[]): Promise<Article[]> {
+  return Promise.all(articles.map(enrichArticle));
 }
