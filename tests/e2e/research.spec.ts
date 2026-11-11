@@ -183,15 +183,20 @@ test("Open original navigates to the exact source without an Internet request", 
 
 test("shows a paid label before opening the article and keeps it after saving", async ({ page }) => {
   await page.route("**/api/search", (route) => route.fulfill({
-    json: { ...demoResponse, results: [{ ...demoArticles[0], paid: true }, demoArticles[1]] },
+    json: { ...demoResponse, results: [{ ...demoArticles[0], paid: true, likes: 0, comments: 0 }, demoArticles[1]] },
   }));
   await search(page);
   await expect(card(page).getByTitle("Full post is for paid subscribers")).toHaveText("$ Paid");
+  await expect(card(page)).toContainText("0 likes");
+  await expect(card(page)).toContainText("0 comments");
   await expect(card(page, 1).getByTitle("Full post is for paid subscribers")).toHaveCount(0);
+  await expect(card(page, 1)).not.toContainText(/0 likes|0 comments/);
   await card(page).getByRole("button", { name: "Save", exact: true }).click();
   await page.reload();
   await saved(page);
   await expect(card(page).getByTitle("Full post is for paid subscribers")).toBeVisible();
+  await expect(card(page)).toContainText("0 likes");
+  await expect(card(page)).toContainText("0 comments");
 });
 
 test("shows engagement and keyword match without changing relevance order", async ({ page }) => {

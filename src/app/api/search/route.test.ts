@@ -36,9 +36,10 @@ describe("POST /api/search", () => {
     const makeArticle = (slug: string) => ({ title: slug, url: `https://writer.substack.com/p/${slug}` });
     const paid = makeArticle("paid-post");
     const free = makeArticle("free-post");
+    const noEngagement = makeArticle("new-post");
     const unavailable = makeArticle("unknown-post");
     const wrong = makeArticle("wrong-post");
-    fetchMock.mockResolvedValueOnce(Response.json({ results: [paid, { ...free, paid: true, likes: 99 }, unavailable, wrong] }));
+    fetchMock.mockResolvedValueOnce(Response.json({ results: [paid, { ...free, paid: true, likes: 99 }, noEngagement, unavailable, wrong] }));
     fetchMock.mockImplementation(async (input) => {
       const endpoint = new URL(String(input));
       expect(endpoint.origin).toBe("https://writer.substack.com");
@@ -46,13 +47,14 @@ describe("POST /api/search", () => {
       switch (endpoint.pathname.split("/").at(-1)) {
         case "paid-post": return Response.json({ slug: "paid-post", audience: "only_paid", reactions: { "❤": 7, "🔥": 2 }, reaction_count: 9, comment_count: 0 });
         case "free-post": return Response.json({ slug: "free-post", audience: "everyone", reaction_count: 4, comment_count: 2 });
+        case "new-post": return Response.json({ slug: "new-post", audience: "everyone", reactions: {}, comment_count: 0 });
         case "wrong-post": return Response.json({ slug: "different-post", audience: "founding" });
         default: return new Response(null, { status: 403 });
       }
     });
     const response = await POST(request({ query: "query" }));
     expect(await response.json()).toEqual({
-      results: [{ ...paid, paid: true, likes: 7, comments: 0 }, { ...free, reactions: 4, comments: 2 }, unavailable, wrong],
+      results: [{ ...paid, paid: true, likes: 7, comments: 0 }, { ...free, reactions: 4, comments: 2 }, { ...noEngagement, likes: 0, comments: 0 }, unavailable, wrong],
       mode: "live",
     });
   });

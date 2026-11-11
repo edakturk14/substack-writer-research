@@ -32,13 +32,15 @@ async function enrichArticle(article: Article): Promise<Article> {
 
     if (!metadata || typeof metadata !== "object" || !("slug" in metadata) || metadata.slug !== slug) return article;
     const post = metadata as Record<string, unknown>;
-    const breakdown = post.reactions && typeof post.reactions === "object"
+    const breakdown = post.reactions && typeof post.reactions === "object" && !Array.isArray(post.reactions)
       ? post.reactions as Record<string, unknown>
-      : {};
+      : undefined;
+    const zeroLikes = post.reaction_count === 0 ||
+      (post.reaction_count == null && breakdown && Object.keys(breakdown).length === 0);
     return parseArticle({
       ...article,
       paid: post.audience === "only_paid" || post.audience === "founding",
-      likes: breakdown["❤"] ?? breakdown["❤️"] ?? (post.reaction_count === 0 ? 0 : undefined),
+      likes: breakdown?.["❤"] ?? breakdown?.["❤️"] ?? (zeroLikes ? 0 : undefined),
       reactions: post.reaction_count,
       comments: post.comment_count,
     }) ?? article;
