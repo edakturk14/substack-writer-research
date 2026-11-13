@@ -17,7 +17,7 @@ const writerResearchScreenshot = "/about/writer-research-posts.png";
 export default function About() {
   return (
     <div className={workspace.page}>
-      <SiteHeader about />
+      <SiteHeader current="about" />
       <main id="main" className={workspace.main}>
         <header className={`${workspace.pageHeading} ${styles.heading}`}>
           <h1>Why this search is different</h1>

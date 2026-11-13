@@ -21,19 +21,15 @@ Search-owned `src/lib/articles.ts` exports:
 - `parseSearchResponse(value: unknown): SearchResponse | null`: runtime check
   client response shape, normalize and deduplicate articles.
 
-Interface-owned storage key: `substack-writer-research:saved:v1`.
-Store an array of Article values only, use `parseArticle` and URL identity on
-read/write. Broken or unavailable storage must not crash the page.
-
 Accessible UI agreement: a field labeled `Research question`, a form submit
-button `Search`, view buttons `Search` and `Saved` with `aria-pressed`;
-cards use `<article>`; card actions have exact visible names `Open original`,
-`Save`, `Saved`, `Remove`. The Saved view heading is `Saved articles`.
+button `Search`, navigation links `Search` and `About` with `aria-current`;
+cards use `<article>` and an `Open original` link. There is no saved view or
+browser storage for articles.
 All text, including provider excerpts, is plain React text.
 
 Ownership: search agent owns the route, `articles.ts`, `exa.ts` and their unit
-tests. Interface agent owns page/layout/styles, `src/components`, storage and
-storage tests. Verification agent owns `tests/e2e`, `playwright.config.ts`,
+tests. Interface agent owns page/layout/styles and `src/components`.
+Verification agent owns `tests/e2e`, `playwright.config.ts`,
 `.github/workflows`, and `scripts/check-links.*`. Lead owns package/lockfile,
 contracts, fixtures, Vitest config, README and integration. No agent commits
 or pushes. No overlapping writes.

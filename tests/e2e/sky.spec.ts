@@ -37,6 +37,13 @@ test("header has no brand or seam", async ({ page }) => {
   })).toBe(true);
 });
 
+test("idle page omits the illustrated empty-state block", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByText("Your next good read starts here.")).toHaveCount(0);
+  await expect(page.getByText("Start with a question. Leave with a few new perspectives.")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Search results" }).locator("svg")).toHaveCount(0);
+});
+
 for (const width of [1440, 1024, 768, 390, 320]) {
   test(`no horizontal overflow at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });

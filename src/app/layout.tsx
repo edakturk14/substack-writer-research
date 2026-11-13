@@ -10,7 +10,7 @@ const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: "400", variable: "--fon
 export const metadata: Metadata = {
   title: "Writer Research",
   description:
-    "Follow a question into independent writing. Find Substack articles, read excerpts, and keep a personal reading list.",
+    "Follow a question into independent writing. Find Substack articles and read excerpts from the original posts.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

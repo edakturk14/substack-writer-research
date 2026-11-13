@@ -2,12 +2,9 @@ import type { Page } from "@playwright/test";
 import { demoArticles, demoResponse, emptyResponse } from "../../src/lib/fixtures";
 import { test, expect } from "./fixtures";
 
-const STORAGE_KEY = "substack-writer-research:saved:v1";
 const question = "How can I make a useful newsletter about AI inference?";
 const field = (page: Page) => page.getByRole("textbox", { name: "Research question" });
 const submit = (page: Page) => page.locator("form").getByRole("button", { name: "Search", exact: true });
-const view = (page: Page, name: "Search" | "Saved") =>
-  page.getByRole("button", { name, exact: true }).and(page.locator("[aria-pressed]"));
 const originalLinkName = /^Open original(?: \(opens in a new tab\))?$/;
 const card = (page: Page, index = 0) =>
   page.getByRole("article").filter({ hasText: demoArticles[index].title });
@@ -16,17 +13,6 @@ async function search(page: Page, query = question) {
   await field(page).fill(query);
   await submit(page).click();
   await expect(card(page)).toBeVisible();
-}
-
-async function saved(page: Page) {
-  await view(page, "Saved").click();
-  await expect(page.getByRole("heading", { name: "Saved articles", exact: true })).toBeVisible();
-}
-
-async function seedStorage(page: Page, value: string) {
-  await page.addInitScript(({ key, value }) => {
-    localStorage.setItem(key, value);
-  }, { key: STORAGE_KEY, value });
 }
 
 test.beforeEach(async ({ page, context, baseURL }) => {
@@ -44,9 +30,7 @@ test.beforeEach(async ({ page, context, baseURL }) => {
 test("the About comparison links to a prefilled search and Search returns home", async ({ page }) => {
   const about = page.getByRole("link", { name: "About", exact: true });
   await expect(page.getByRole("link", { name: "Writer Research", exact: true })).toHaveCount(0);
-  await saved(page);
-  await view(page, "Search").click();
-  await expect(view(page, "Search")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("link", { name: "Search", exact: true })).toHaveAttribute("aria-current", "page");
 
   await about.click();
   await expect(page).toHaveURL(/\/about$/);
@@ -67,12 +51,9 @@ test("the About comparison links to a prefilled search and Search returns home",
   await expect(card(page)).toBeVisible();
 
   await about.click();
-  await page.getByRole("link", { name: "Saved", exact: true }).click();
-  await expect(view(page, "Saved")).toHaveAttribute("aria-pressed", "true");
-  await about.click();
   await page.getByRole("link", { name: "Search", exact: true }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(view(page, "Search")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("link", { name: "Search", exact: true })).toHaveAttribute("aria-current", "page");
 });
 
 for (const method of ["button", "Enter"] as const) {
@@ -163,32 +144,25 @@ for (const failure of ["HTTP error", "network failure", "malformed JSON", "inval
   });
 }
 
-test("saving twice deduplicates, reload persists, and removal updates Search", async ({ page }) => {
+test("search has no saving controls and does not use browser storage", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.addInitScript(() => {
+    for (const name of ["getItem", "setItem", "removeItem"]) {
+      Object.defineProperty(Storage.prototype, name, {
+        configurable: true,
+        value() { throw new DOMException("Storage blocked", "SecurityError"); },
+      });
+    }
+  });
+  await page.goto("/?view=saved");
+  await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link"))
+    .toHaveText(["Search", "About"]);
+  await expect(page.getByRole("link", { name: "Search", exact: true })).toHaveAttribute("aria-current", "page");
   await search(page);
-  await card(page).getByRole("button", { name: "Save", exact: true }).dblclick();
-  await expect(card(page).getByRole("button", { name: "Saved", exact: true })).toBeVisible();
-  await search(page, "A second question that returns the same fixed examples");
-  await expect(card(page).getByRole("button", { name: "Saved", exact: true })).toBeVisible();
-  await saved(page);
-  await expect(page.getByRole("article")).toHaveCount(1);
-  const stored = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
-  expect(stored).toHaveLength(1);
-  expect(stored[0].url).toBe(demoArticles[0].url);
-  await page.reload();
-  await saved(page);
-  await expect(card(page)).toBeVisible();
-  await expect(page.getByRole("article")).toHaveCount(1);
-  await view(page, "Search").click();
-  await search(page);
-  await expect(card(page).getByRole("button", { name: "Saved", exact: true })).toBeVisible();
-  await saved(page);
-  await card(page).getByRole("button", { name: "Remove", exact: true }).click();
-  await expect(page.getByRole("article")).toHaveCount(0);
-  await view(page, "Search").click();
-  await expect(card(page).getByRole("button", { name: "Save", exact: true })).toBeVisible();
-  await page.reload();
-  await saved(page);
-  await expect(page.getByRole("article")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^(Save|Saved|Remove)$/ })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Saved articles" })).toHaveCount(0);
+  expect(errors).toEqual([]);
 });
 
 test("Open original navigates to the exact source without an Internet request", async ({ page, context }) => {
@@ -215,7 +189,7 @@ test("Open original navigates to the exact source without an Internet request", 
   }
 });
 
-test("shows a paid label before opening the article and keeps it after saving", async ({ page }) => {
+test("shows a paid label before opening the article", async ({ page }) => {
   await page.route("**/api/search", (route) => route.fulfill({
     json: { ...demoResponse, results: [{ ...demoArticles[0], paid: true, likes: 0, comments: 0 }, demoArticles[1]] },
   }));
@@ -225,12 +199,6 @@ test("shows a paid label before opening the article and keeps it after saving", 
   await expect(card(page)).toContainText("0 comments");
   await expect(card(page, 1).getByTitle("Full post is for paid subscribers")).toHaveCount(0);
   await expect(card(page, 1)).not.toContainText(/0 likes|0 comments/);
-  await card(page).getByRole("button", { name: "Save", exact: true }).click();
-  await page.reload();
-  await saved(page);
-  await expect(card(page).getByTitle("Full post is for paid subscribers")).toBeVisible();
-  await expect(card(page)).toContainText("0 likes");
-  await expect(card(page)).toContainText("0 comments");
 });
 
 test("shows engagement without keyword match or changing relevance order", async ({ page }) => {
@@ -252,62 +220,6 @@ test("shows engagement without keyword match or changing relevance order", async
   await page.getByText("How ranking works", { exact: true }).click();
   await expect(page.getByText(/better for specific questions than Substack’s own search/)).toBeVisible();
   await expect(page.getByText(/keyword match/i)).toHaveCount(0);
-  await first.getByRole("button", { name: "Save", exact: true }).click();
-  await saved(page);
-  await expect(page.getByRole("article")).toContainText("7 likes");
-  await expect(page.getByText(/keyword match/i)).toHaveCount(0);
-});
-
-for (const value of ["{broken", JSON.stringify({ wrong: "shape" })]) {
-  test(`corrupt saved storage is recoverable (${value})`, async ({ page }) => {
-    await seedStorage(page, value);
-    await page.reload();
-    await saved(page);
-    await expect(page.getByRole("article")).toHaveCount(0);
-    await view(page, "Search").click();
-    await search(page);
-    await card(page).getByRole("button", { name: "Save", exact: true }).click();
-    await saved(page);
-    await expect(card(page)).toBeVisible();
-  });
-}
-
-test("unavailable storage does not crash or falsely claim a successful save", async ({ page }) => {
-  const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
-  await page.addInitScript(() => {
-    for (const name of ["getItem", "setItem", "removeItem"]) {
-      Object.defineProperty(Storage.prototype, name, {
-        configurable: true,
-        value() { throw new DOMException("Storage blocked", "SecurityError"); },
-      });
-    }
-  });
-  await page.reload();
-  await search(page);
-  await card(page).getByRole("button", { name: "Save", exact: true }).click();
-  await expect(page.getByRole("status").filter({ hasText: /storage|saving|save|browser/i }).last()).toBeVisible();
-  await expect(card(page).getByRole("button", { name: "Save", exact: true })).toBeVisible();
-  await saved(page);
-  await expect(page.getByRole("article")).toHaveCount(0);
-  await view(page, "Search").click();
-  await search(page, "Research remains available without browser storage");
-  expect(errors).toEqual([]);
-});
-
-test("unsafe saved URLs are discarded while valid articles remain", async ({ page }) => {
-  const unsafe = ["javascript:alert(1)", "data:text/html,<h1>Unsafe</h1>", "file:///etc/passwd"];
-  await seedStorage(page, JSON.stringify([
-    ...unsafe.map((url) => ({ title: "Unsafe stored article", url })),
-    demoArticles[0],
-    { ...demoArticles[0], url: `${demoArticles[0].url}?utm_source=duplicate#section` },
-  ]));
-  await page.reload();
-  await saved(page);
-  await expect(page.getByRole("article")).toHaveCount(1);
-  await expect(page.getByText("Unsafe stored article")).toHaveCount(0);
-  await expect(card(page).getByRole("link", { name: originalLinkName }))
-    .toHaveAttribute("href", demoArticles[0].url);
 });
 
 test("keyboard focus reaches search and card actions without horizontal overflow", async ({ page }) => {
@@ -343,13 +255,6 @@ test("keyboard focus reaches search and card actions without horizontal overflow
     if (await originalLink.evaluate((element) => element === document.activeElement)) break;
   }
   await expect(originalLink).toBeFocused();
-  await page.keyboard.press("Tab");
-  await expect(card(page).getByRole("button", { name: "Save", exact: true })).toBeFocused();
-  await page.keyboard.press("Enter");
-  await expect(card(page).getByRole("button", { name: "Saved", exact: true })).toBeVisible();
-  expect(await page.evaluate(() =>
-    document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
-  await saved(page);
   expect(await page.evaluate(() =>
     document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 });
@@ -370,7 +275,7 @@ const paginatedArticles = [
   publishedDate: ["2023-01-01", undefined, "2026-11-10", "2024-01-01", "2025-01-01", "2026-01-01", "2026-10-01"][index],
 }));
 
-test("sorting and paging are local, stable, and preserve saved identity", async ({ page }) => {
+test("sorting and paging are local and stable", async ({ page }) => {
   let requests = 0;
   await page.route("**/api/search", (route) => {
     requests++;
@@ -384,15 +289,9 @@ test("sorting and paging are local, stable, and preserve saved identity", async 
   await page.getByRole("button", { name: "Next", exact: true }).click();
   await expect(headings).toHaveText(["Result 6", "Result 7"]);
   await expect(page.getByRole("button", { name: "Next", exact: true })).toBeDisabled();
-  await page.getByRole("article").filter({ hasText: "Result 6" }).getByRole("button", { name: "Save", exact: true }).click();
-  await saved(page);
-  await expect(headings).toHaveText(["Result 6"]);
-  await view(page, "Search").click();
-  await expect(headings).toHaveText(["Result 6", "Result 7"]);
   await page.getByLabel("Sort by").selectOption("newest");
   await expect(headings).toHaveText(["Result 3", "Result 7", "Result 6", "Result 5", "Result 4"]);
   await expect(page.getByText("Page 1 of 2")).toBeVisible();
-  await expect(page.getByRole("article").filter({ hasText: "Result 6" }).getByRole("button", { name: "Saved", exact: true })).toBeVisible();
   await page.getByLabel("Sort by").selectOption("oldest");
   await expect(headings).toHaveText(["Result 1", "Result 4", "Result 5", "Result 6", "Result 7"]);
   await page.getByRole("button", { name: "Next", exact: true }).click();
@@ -410,23 +309,6 @@ test("sorting and paging are local, stable, and preserve saved identity", async 
   expect(requests).toBe(2);
 });
 
-test("removing the last saved page returns to the previous page", async ({ page }) => {
-  await seedStorage(page, JSON.stringify(paginatedArticles));
-  await page.reload();
-  await saved(page);
-  await page.getByLabel("Sort by").selectOption("newest");
-  await expect(page.getByRole("article").first()).toContainText("Result 3");
-  await page.getByRole("button", { name: "Next", exact: true }).click();
-  await expect(page.getByRole("article")).toHaveCount(2);
-  await page.getByRole("article").first().getByRole("button", { name: "Remove", exact: true }).click();
-  await expect(page.getByRole("article")).toHaveCount(1);
-  await page.getByRole("article").first().getByRole("button", { name: "Remove", exact: true }).click();
-  await expect(page.getByRole("article")).toHaveCount(5);
-  await expect(page.getByRole("navigation", { name: "Article pages" })).toHaveCount(0);
-  expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).length, STORAGE_KEY)).toBe(5);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
-});
-
 test("research desk keeps search near the top and results in one readable column", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Good writing isout there.");
   await expect(page.locator("ol")).toHaveCount(0);
@@ -440,8 +322,8 @@ test("research desk keeps search near the top and results in one readable column
   expect(second.y).toBeGreaterThanOrEqual(first.y + first.height);
   for (const row of rows) {
     await expect(row.getByRole("heading", { level: 3 })).toBeVisible();
-    const save = row.getByRole("button", { name: "Save", exact: true });
-    expect((await save.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    const original = row.getByRole("link", { name: originalLinkName });
+    expect((await original.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   }
   await expect(rows[0]).toContainText(demoArticles[0].publication!);
   await expect(rows[0]).toContainText(demoArticles[0].author!);
@@ -460,9 +342,5 @@ test("narrow screen handles long metadata and missing publication without overfl
   await submit(page).click();
   await expect(page.getByRole("article")).toHaveCount(2);
   await expect(page.getByRole("article").first()).toContainText("jamwithai.substack.com");
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
-  await page.getByRole("article").first().getByRole("button", { name: "Save", exact: true }).click();
-  await saved(page);
-  await expect(page.getByRole("article")).toHaveCount(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
 });
