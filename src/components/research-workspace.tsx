@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import SiteHeader from "@/components/site-header";
 import { articleIdentity, parseSearchResponse } from "@/lib/articles";
 import { MAX_QUERY_LENGTH, type Article, type SearchResponse } from "@/lib/contracts";
-import { articlePage, keywordMatch, PAGE_SIZE, shortExcerpt, sortArticles, type ArticleSort } from "@/lib/presentation";
+import { articlePage, PAGE_SIZE, shortExcerpt, sortArticles, type ArticleSort } from "@/lib/presentation";
 import {
   readSavedArticles,
   SAVED_STORAGE_KEY,
@@ -14,10 +14,25 @@ import {
 } from "@/lib/storage";
 import styles from "@/app/page.module.css";
 
-function Arrow({ diagonal = false }: { diagonal?: boolean }) {
+const starterPrompts = [
+  "Moving to New York in your 30s",
+  "What to see and do in Bryce Canyon in November",
+  "Using AI agents to manage your personal finances",
+];
+
+function Arrow({ diagonal = true }: { diagonal?: boolean }) {
   return (
     <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d={diagonal ? "M4 12 12 4M6 4h6v6" : "M2 8h11m-5-5 5 5-5 5"} />
+    </svg>
+  );
+}
+
+function Book() {
+  return (
+    <svg aria-hidden="true" width="82" height="38" viewBox="0 0 100 46" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M50 40C35 30 18 31 3 36L17 10C30 2 42 10 50 29 58 10 70 2 83 10L97 36C82 31 65 30 50 40Z" />
+      <path d="M50 40V29M8 31C25 24 37 29 50 36 63 29 75 24 92 31M11 25C27 19 39 25 50 33 61 25 73 19 89 25M14 19C29 14 41 21 50 30 59 21 71 14 86 19M3 36C23 32 36 35 50 40 64 35 77 32 97 36" />
     </svg>
   );
 }
@@ -50,22 +65,25 @@ function countLabel(count: number | undefined, singular: string): string | undef
   return `${numberFormat.format(count)} ${singular}${count === 1 ? "" : "s"}`;
 }
 
-function ArticleCard({ article, saved, savedView, onSave, onRemove, storageReady, matchQuery }: {
+function ArticleCard({ article, saved, savedView, onSave, onRemove, storageReady, revealKey, revealed, index }: {
   article: Article;
   saved: boolean;
   savedView: boolean;
   onSave: () => void;
   onRemove: () => void;
   storageReady: boolean;
-  matchQuery: string | null;
+  revealKey: string;
+  revealed: Set<string>;
+  index: number;
 }) {
   const date = article.publishedDate ? dateLabel(article.publishedDate) : null;
   const excerpt = article.excerpt ? shortExcerpt(article.excerpt) : undefined;
   const engagement = countLabel(article.likes, "like") ?? countLabel(article.reactions, "reaction");
   const comments = countLabel(article.comments, "comment");
-  const match = matchQuery ? keywordMatch(matchQuery, article.title, excerpt) : null;
+  const [animate] = useState(() => !savedView && !revealed.has(revealKey));
+  useEffect(() => { revealed.add(revealKey); }, [revealed, revealKey]);
   return (
-    <article className={styles.article}>
+    <article className={`${styles.article} ${animate ? styles.resultArrival : ""}`} style={{ animationDelay: `${Math.min(index * 45, 400)}ms` }}>
       <h3>{article.title}</h3>
       <div className={styles.metadata}>
         {article.paid && <span className={styles.paid} title="Full post is for paid subscribers"><span aria-hidden="true">$</span> Paid</span>}
@@ -74,7 +92,6 @@ function ArticleCard({ article, saved, savedView, onSave, onRemove, storageReady
         {date && <time dateTime={article.publishedDate}>{date}</time>}
         {engagement && <span>{engagement}</span>}
         {comments && <span>{comments}</span>}
-        {match !== null && <span>{match}% keyword match</span>}
       </div>
       {excerpt && <p className={styles.excerpt}>{excerpt}</p>}
       <div className={styles.cardActions}>
@@ -87,7 +104,7 @@ function ArticleCard({ article, saved, savedView, onSave, onRemove, storageReady
           disabled={!storageReady || (!savedView && saved)}
           onClick={savedView ? onRemove : onSave}
         >
-          <span aria-hidden="true">{savedView ? "−" : saved ? "✓" : "+"}</span>
+          <svg className={saved ? styles.bookmarked : ""} aria-hidden="true" width="15" height="18" viewBox="0 0 15 18" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.2"><path d="M3 2h9v14l-4.5-3L3 16Z" /></svg>
           {savedView ? "Remove" : saved ? "Saved" : "Save"}
         </button>
       </div>
@@ -111,6 +128,8 @@ export default function ResearchWorkspace({ demoMode, initialQuery, initialView 
   const [saveNotice, setSaveNotice] = useState("");
   const [pages, setPages] = useState({ search: 1, saved: 1 });
   const [sorts, setSorts] = useState<{ search: ArticleSort; saved: ArticleSort }>({ search: "relevance", saved: "relevance" });
+  const [resultVersion, setResultVersion] = useState(0);
+  const [revealed] = useState(() => new Set<string>());
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
   const requestRef = useRef<AbortController | null>(null);
@@ -170,6 +189,7 @@ export default function ResearchWorkspace({ demoMode, initialQuery, initialView 
         setError("The search returned an unreadable response. Please try again.");
         return;
       }
+      setResultVersion((previous) => previous + 1);
       setResponse(parsed);
     } catch {
       setError(controller.signal.aborted
@@ -212,7 +232,7 @@ export default function ResearchWorkspace({ demoMode, initialQuery, initialView 
   }
 
   const isDemo = demoMode || response?.mode === "demo";
-  const matchQuery = view === "search" && response?.mode === "live" ? submittedQuery : null;
+  const showRanking = view === "search" && response?.mode === "live";
   const articles = view === "saved" ? savedState.articles : response?.results ?? [];
   const pagination = articlePage(sortArticles(articles, sorts[view]), pages[view]);
   const changePage = (page: number) => {
@@ -229,7 +249,8 @@ export default function ResearchWorkspace({ demoMode, initialQuery, initialView 
 
   return (
     <div className={styles.page}>
-      <SiteHeader onHome={() => setView("search")}>
+      <div className={styles.sky} aria-hidden="true" />
+      <SiteHeader>
         <button type="button" aria-pressed={view === "search"} onClick={() => setView("search")}>Search</button>
         <button type="button" aria-pressed={view === "saved"} onClick={() => setView("saved")}>
           Saved <span className={styles.count} aria-hidden="true">{savedState.articles.length}</span>
@@ -237,16 +258,17 @@ export default function ResearchWorkspace({ demoMode, initialQuery, initialView 
       </SiteHeader>
 
       <main id="main" className={styles.main}>
-        {isDemo && <div className={styles.demoBanner}><span className={styles.demoDot} aria-hidden="true" /><strong>Demo mode</strong><span>Fixed examples, not live search results. Every question returns the same articles.</span></div>}
+        {isDemo && <div className={styles.demoBanner}><strong>Demo mode</strong><span>Fixed examples, not live search results. Every question returns the same articles.</span></div>}
 
         {view === "search" ? (
           <>
             <section className={styles.pageHeading} aria-labelledby="page-title">
-              <h1 id="page-title">Search Substack posts</h1>
+              <h1 id="page-title">Good writing is<br /><em>out there.</em></h1>
+              <p>Find the Substack posts that get into the specifics.</p>
             </section>
             <section className={styles.searchSection} aria-label="Article search">
               <form onSubmit={search} className={styles.form}>
-                <label htmlFor="research-question">Research question</label>
+                <label htmlFor="research-question"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3"><circle cx="6.7" cy="6.7" r="4.6" /><path d="m10 10 4 4" /></svg><span aria-hidden="true">SEARCH SUBSTACK</span><span className={styles.srOnly}>Research question</span></label>
                 <div className={styles.inputRow}>
                   <input
                     ref={inputRef}
@@ -254,18 +276,32 @@ export default function ResearchWorkspace({ demoMode, initialQuery, initialView 
                     name="query"
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="A topic or question"
+                    placeholder="What would you like to read about?"
                     maxLength={MAX_QUERY_LENGTH}
                     aria-describedby="search-hint"
                     readOnly={loading}
                     autoComplete="off"
                   />
+                </div>
+                <div className={styles.formBottom}>
+                  <p id="search-hint" className={styles.hint}>Up to 10 posts per search.</p>
                   <button className={styles.searchButton} type="submit" disabled={loading}>
+                    {loading && <span className={styles.buttonSpinner} aria-hidden="true" />}
                     {loading ? "Searching…" : "Search"} <Arrow />
                   </button>
                 </div>
-                <p id="search-hint" className={styles.hint}>Search by topic or question. Up to 10 posts per search.</p>
               </form>
+              <div className={styles.starters}>
+                <p>A FEW PLACES TO START</p>
+                <div className={styles.starterList}>
+                  {starterPrompts.map((prompt, index) => (
+                    <button key={prompt} type="button" disabled={loading} className={query === prompt ? styles.selectedPrompt : ""} aria-pressed={query === prompt}
+                      onClick={() => { setQuery(prompt); inputRef.current?.focus(); }}>
+                      <span className={styles.promptNumber}>0{index + 1}</span><span>{prompt}</span><Arrow />
+                    </button>
+                  ))}
+                </div>
+              </div>
             </section>
           </>
         ) : (
@@ -278,8 +314,8 @@ export default function ResearchWorkspace({ demoMode, initialQuery, initialView 
         <p className={styles.srOnly} role="status" aria-live="polite">{statusText} {saveNotice}</p>
         {savedState.warning && <p className={styles.warning} role="status">{savedState.warning}</p>}
 
-        <section className={styles.readingSection} aria-label={view === "saved" ? "Saved reading list" : "Search results"} aria-busy={view === "search" && loading}>
-          <div className={styles.sectionHeading}>
+        <section className={`${styles.readingSection} ${view === "search" && !response && !loading && !error ? styles.idleReading : ""}`} aria-label={view === "saved" ? "Saved reading list" : "Search results"} aria-busy={view === "search" && loading}>
+          <div className={`${styles.sectionHeading} ${view === "search" && !response && !loading && !error ? styles.srOnly : ""}`}>
             <h2 ref={resultsHeadingRef} tabIndex={-1}>{view === "saved" ? "Reading list" : response?.mode === "demo" ? "Fixed example articles" : "Search results"}</h2>
             {(view === "saved" || response) && <span>{view === "saved" ? `${articles.length} saved` : `${articles.length} ${articles.length === 1 ? "article" : "articles"}`}</span>}
           </div>
@@ -313,17 +349,20 @@ export default function ResearchWorkspace({ demoMode, initialQuery, initialView 
                 </div>
               </div>
               {sorts[view] !== "relevance" && <p className={styles.resultsNote}>Sorted by publication date. Undated articles appear last.</p>}
-              {matchQuery && (
+              {showRanking && (
                 <details className={styles.rankingDetails}>
                   <summary>How ranking works</summary>
-                  <p>Relevance follows Exa’s search order. Keyword match is the share of unique query words found in the title or shown excerpt, after common words are removed. Likes and comments are shown for context.</p>
+                  <p>Your whole question goes to Exa, a search engine that matches posts on what they’re about, not only on the words they share with your question. The post Exa judges closest to your question comes first.</p>
+                  <p>That works better for specific questions than Substack’s own search, which often returns posts that share a word or two with your question but are about something else.</p>
+                  <p>Sorting by date reorders these same results. Likes and comments come from Substack and are shown for context. They don’t change the order.</p>
                 </details>
               )}
               <div className={styles.articleList}>
-                {pagination.articles.map((article) => (
-                  <ArticleCard key={articleIdentity(article.url)} article={article}
+                {pagination.articles.map((article, index) => (
+                  <ArticleCard key={`${view}:${resultVersion}:${articleIdentity(article.url)}`} article={article}
+                    revealKey={`${resultVersion}:${articleIdentity(article.url)}`} revealed={revealed} index={index}
                     saved={savedIds.has(articleIdentity(article.url))} savedView={view === "saved"}
-                    matchQuery={matchQuery} storageReady={storageReady}
+                    storageReady={storageReady}
                     onSave={() => updateSaved(article, false)} onRemove={() => updateSaved(article, true)} />
                 ))}
               </div>
@@ -347,12 +386,15 @@ export default function ResearchWorkspace({ demoMode, initialQuery, initialView 
               <p>Try a broader topic or a different phrasing. Your question is still above, ready to edit.</p>
             </div>
           ) : (
-            <div className={styles.feedback}>
-              <p>Enter a topic or question above to find posts.</p>
+            <div className={styles.emptyState}>
+              <Book />
+              <h3>Your next good read starts here.</h3>
+              <p>Start with a question. Leave with a few new perspectives.</p>
             </div>
           )}
         </section>
       </main>
+      <footer className={styles.footer}><a href="https://exa.ai" target="_blank" rel="noopener noreferrer">SEARCH POWERED BY EXA <Arrow /></a></footer>
     </div>
   );
 }

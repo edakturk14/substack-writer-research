@@ -2,16 +2,14 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import styles from "@/app/page.module.css";
 
-export default function SiteHeader({ children, about = false, onHome }: {
+export default function SiteHeader({ children, about = false }: {
   children?: ReactNode;
   about?: boolean;
-  onHome?: () => void;
 }) {
   return (
     <>
       <a className={styles.skipLink} href="#main">Skip to content</a>
       <header className={styles.header}>
-        <Link className={styles.brandName} href="/" onNavigate={onHome}>Writer Research</Link>
         <nav className={styles.navigation} aria-label="Main navigation">
           {children ?? (
             <>

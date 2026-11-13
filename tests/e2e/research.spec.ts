@@ -41,11 +41,11 @@ test.beforeEach(async ({ page, context, baseURL }) => {
   await page.goto("/");
 });
 
-test("the About comparison links to a prefilled search and the brand returns home", async ({ page }) => {
-  const brand = page.getByRole("link", { name: "Writer Research", exact: true });
+test("the About comparison links to a prefilled search and Search returns home", async ({ page }) => {
   const about = page.getByRole("link", { name: "About", exact: true });
+  await expect(page.getByRole("link", { name: "Writer Research", exact: true })).toHaveCount(0);
   await saved(page);
-  await brand.click();
+  await view(page, "Search").click();
   await expect(view(page, "Search")).toHaveAttribute("aria-pressed", "true");
 
   await about.click();
@@ -70,7 +70,7 @@ test("the About comparison links to a prefilled search and the brand returns hom
   await page.getByRole("link", { name: "Saved", exact: true }).click();
   await expect(view(page, "Saved")).toHaveAttribute("aria-pressed", "true");
   await about.click();
-  await brand.click();
+  await page.getByRole("link", { name: "Search", exact: true }).click();
   await expect(page).toHaveURL(/\/$/);
   await expect(view(page, "Search")).toHaveAttribute("aria-pressed", "true");
 });
@@ -233,7 +233,7 @@ test("shows a paid label before opening the article and keeps it after saving", 
   await expect(card(page)).toContainText("0 comments");
 });
 
-test("shows engagement and keyword match without changing relevance order", async ({ page }) => {
+test("shows engagement without keyword match or changing relevance order", async ({ page }) => {
   await page.route("**/api/search", (route) => route.fulfill({ json: {
     mode: "live",
     results: [
@@ -245,14 +245,13 @@ test("shows engagement and keyword match without changing relevance order", asyn
   await submit(page).click();
   const first = page.getByRole("article").first();
   const second = page.getByRole("article").nth(1);
-  await expect(first).toContainText("33% keyword match");
   await expect(first).toContainText("7 likes");
   await expect(first).toContainText("0 comments");
-  await expect(second).toContainText("100% keyword match");
   await expect(second).toContainText("4 reactions");
   await expect(second).toContainText("1 comment");
   await page.getByText("How ranking works", { exact: true }).click();
-  await expect(page.getByText(/Relevance follows Exa/)).toBeVisible();
+  await expect(page.getByText(/better for specific questions than Substack’s own search/)).toBeVisible();
+  await expect(page.getByText(/keyword match/i)).toHaveCount(0);
   await first.getByRole("button", { name: "Save", exact: true }).click();
   await saved(page);
   await expect(page.getByRole("article")).toContainText("7 likes");
@@ -324,11 +323,13 @@ test("keyboard focus reaches search and card actions without horizontal overflow
   }
   expect(reachedInput).toBe(true);
   await expect(field(page)).toBeFocused();
-  const focusVisible = await field(page).evaluate((element) => {
-    const style = getComputedStyle(element);
+  // The focus ring may be drawn on the field or on its enclosing search panel.
+  const focusVisible = await field(page).evaluate((element) => [element, element.closest("form")].some((target) => {
+    if (!target) return false;
+    const style = getComputedStyle(target);
     return (style.outlineStyle !== "none" && parseFloat(style.outlineWidth) > 0)
       || style.boxShadow !== "none";
-  });
+  }));
   expect(focusVisible).toBe(true);
   await field(page).fill(question);
   await field(page).press("Enter");
@@ -427,10 +428,10 @@ test("removing the last saved page returns to the previous page", async ({ page 
 });
 
 test("research desk keeps search near the top and results in one readable column", async ({ page }) => {
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Search Substack posts");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Good writing isout there.");
   await expect(page.locator("ol")).toHaveCount(0);
   const inputBox = (await field(page).boundingBox())!;
-  expect(inputBox.y + inputBox.height).toBeLessThan(430);
+  expect(inputBox.y + inputBox.height).toBeLessThan(600);
   await search(page);
   const rows = await page.getByRole("article").all();
   const first = (await rows[0].boundingBox())!;
