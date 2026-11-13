@@ -1,13 +1,14 @@
 :root {
-  --paper: #fff;
-  --ink: #202124;
-  --muted: #555960;
-  --line: #dddfe3;
-  --control-line: #858a93;
-  --surface: #f3f4f6;
-  --link: #28478e;
-  --action-hover: #383b42;
-  --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --paper: #fcfcf8;
+  --ink: #1c3156;
+  --muted: #5d6d82;
+  --line: #d6dfeb;
+  --control-line: #9cacc2;
+  --surface: #edf5fc;
+  --link: #315cba;
+  --action-hover: #254b9d;
+  --serif: var(--font-serif), "Iowan Old Style", Georgia, serif;
+  --mono: var(--font-mono), "Courier New", monospace;
   color-scheme: light;
 }
 
@@ -16,16 +17,16 @@ body {
   margin: 0;
   color: var(--ink);
   background: var(--paper);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
-button, input, select { font: inherit; }
+button, input, textarea, select { font: inherit; }
 button, a, input, select { -webkit-tap-highlight-color: transparent; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 a { color: inherit; }
 button, input, select { min-width: 0; }
-button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, [tabindex="-1"]:focus-visible {
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, [tabindex="-1"]:focus-visible {
   outline: 3px solid var(--link);
   outline-offset: 5px;
 }

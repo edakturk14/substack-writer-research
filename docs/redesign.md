@@ -1,39 +1,32 @@
-# Writer's research desk
+# Sky search redesign
 
-## Audit and approach
+The search page uses a continuous sky background, Instrument Serif heading,
+DM Sans body and result titles, and IBM Plex Mono labels. The header contains
+Search and About links, without a brand or logo.
 
-Applied the relevant audit, copy, typography, layout, and accessibility guidance
-from [Taste Skill](https://github.com/Leonxlnx/taste-skill/tree/main/skills/taste-skill).
-Its current marketing-site scaffolding and static-export requirements do not fit
-this working Next.js research app. No marketing hero, decorative effects, external
-fonts, or skill gate scripts were added.
+The white search panel accepts the same natural-language questions as before.
+Three starter prompts fill and focus the field without submitting a search.
+The idle page has no illustrated empty-state block. No postcards, Save buttons,
+Saved view, or article storage remain.
 
-Before: taglines, a large hero, boxed search, numbered onboarding, and two-column
-result cards pushed the research task down the page.
+Results stay in one readable column. Titles use DM Sans semibold, with source,
+author, date, paid status, and engagement below. Each card links to the original.
+Search/API behavior, excerpt limits, sorting, pagination, and the development
+cache workaround remain unchanged. Missing publication names fall back to the
+validated source hostname.
 
-After: a compact workspace header, **Search Substack posts**, a labeled search
-field, and one reading column. Warm paper, dark ink, serif titles, 16px excerpts,
-and thin row dividers replace nested cards. Source, author, and date stay together;
-Save sits beside the title on desktop and beside the source link on mobile.
-Empty, loading, and error states use direct instructions.
-
-Search/API behavior, original destinations, saved storage, excerpt limits,
-sorting, pagination, and the development cache workaround remain unchanged.
-Missing publication names fall back to the validated source hostname.
+The About page retains its search comparison. Live results and About explain
+Exa's meaning-based ranking; keyword-match percentages are no longer shown.
 
 ## Repeatable comparison
 
-`tests/e2e/visual.spec.ts` captures the same query, fixed demo articles, empty saved
-list, and full page at 1440×1000 and 390×844. The demo banner deliberately remains
-visible: these are fixed examples, not live query-matched results.
+`tests/e2e/visual.spec.ts` captures the same query, fixed demo articles, and full
+page at 1440×1000 and 390×844. The demo banner deliberately remains visible:
+these are fixed examples, not live query-matched results.
 
-The Verify workflow uploads `research-desk-screenshots` on each run. Baseline
-capture commit: `9ed0ae1` (UI identical to `e6a424d`). The screenshot test is
-unchanged by the redesign. Local desktop browser isolation and viewport emulation
-are unavailable, so screenshots and browser tests run in CI rather than taking
-over the user's active browser.
-
-Browser coverage includes search by button/Enter, save/reload/remove, exact
-original-link navigation (intercepted, not a live source availability check),
-sorting/pagination, keyboard focus, single-column layout, search placement,
-44px Save controls, and overflow with long metadata at 320px.
+Browser coverage includes button/Enter submission, loading and error recovery,
+original-link navigation (intercepted, not a source availability check),
+sorting/pagination, keyboard focus, starter prompts, About navigation, and
+overflow with long metadata at 320px. Tests also verify that saving controls
+and the illustrated empty state are absent. Reduced-motion styles disable
+entrance and loading animations.

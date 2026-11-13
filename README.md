@@ -1,15 +1,15 @@
 # Writer Research
 
 Find what has already been written about an idea, read an original passage, and
-save articles for your next draft. One responsive page, with Search and Saved
-views. No generated summaries, accounts, database, or recommendations.
+open the source. No generated summaries, accounts, database, saved reading list,
+or recommendations.
 
 Sort search results by **Relevance**, **Newest first**, or **Oldest first**.
-Cards show a plain-text excerpt of at most 300 characters. Search and Saved show
+Cards show a plain-text excerpt of at most 300 characters. Search results show
 five articles per page, with Previous/Next controls when needed. Sorting and
 paging use the already-fetched results, not additional Exa requests. Relevance
 restores provider order; undated articles stay last in either date order.
-Saved has its own Saved order/date sorting. A new search or sort starts at page 1.
+A new search or sort starts at page 1.
 
 ## Run on your Mac
 
@@ -40,7 +40,7 @@ Open `http://localhost:3000`. Try:
 The visible **Demo mode** label means every valid query returns the same two
 fixed example articles, not query-matched search results. Their public links
 and quoted passages were checked against the original pages on November 11,
-2026. Save an article, switch to Saved, and reload to try persistence.
+2026. Open an original article to read more.
 
 ### Live search with Exa
 
@@ -58,7 +58,7 @@ Each submitted live search makes one
 [Exa Search API](https://exa.ai/docs/reference/search) request using `type: "lite"`,
 up to 10 results, Substack domain filters, and highlights. There are no
 automatic retries or silent demo fallbacks. Live searches send the question
-to Exa; saved articles never leave your browser through this app.
+to Exa.
 
 ## Build and verify
 
@@ -106,10 +106,10 @@ Next.js 16.4 has a reported Turbopack persistent-cache restart loop
 (`vercel/next.js#100267`). This project disables only the development filesystem
 cache as the upstream-documented workaround. Production build caching remains
 enabled. If upgrading an already-running checkout, restart `npm run dev` after
-pulling the configuration change; there is no need to delete saved browser data
+pulling the configuration change; there is no need to delete browser data
 or change your Exa key.
 
-## Coverage and storage
+## Coverage
 
 - Search accepts trimmed natural-language questions of 1–300 characters.
 - Only HTTPS article URLs on `substack.com` and its publication subdomains
@@ -120,19 +120,13 @@ or change your Exa key.
   pages are excluded. Cards show **$ Paid** when a publication's public post
   metadata confirms paid access. When the lookup is unavailable, access is unverified.
 - Cards show likes and comments when Substack supplies them. Aggregate reaction
-  totals are labeled **reactions**. The keyword match percentage compares unique
-  query words with the title and displayed excerpt, ignoring common words.
+  totals are labeled **reactions**. They do not affect ordering.
   **Relevance** uses Exa's returned order.
 - Results retain provider order after URL validation and deduplication. Links
   point to the validated original provider URL, never an inferred destination.
   Highlights are provider passages rendered as plain text, not summaries.
-- Saved articles use `localStorage` in the current browser and origin, keyed
-  by article URL identity (ignoring query, fragment, and trailing slash for
-  duplicate detection, while preserving the original link). They persist across reloads but do not sync across
-  devices, browsers, ports, or `localhost` versus `127.0.0.1`. Clearing site
-  data removes them. Only card fields are stored, not queries or API keys.
-- Invalid stored records are filtered. If storage is blocked or full, the
-  interface reports it rather than promising persistence.
+- Search results stay in memory for the current page. The app does not save
+  articles or queries in browser storage.
 
 This is a personal, local-first tool. Before exposing it publicly, add access
 control and rate limiting to protect your Exa quota. It has no authentication.

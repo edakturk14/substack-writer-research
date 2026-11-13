@@ -17,7 +17,7 @@ const writerResearchScreenshot = "/about/writer-research-posts.png";
 export default function About() {
   return (
     <div className={workspace.page}>
-      <SiteHeader about />
+      <SiteHeader current="about" />
       <main id="main" className={workspace.main}>
         <header className={`${workspace.pageHeading} ${styles.heading}`}>
           <h1>Why this search is different</h1>
@@ -49,8 +49,9 @@ export default function About() {
 
         <section className={styles.section} aria-labelledby="ranking-title">
           <h2 id="ranking-title">How results are ranked</h2>
-          <p>Substack searches its own platform. Writer Research sends your question to Exa, which searches a separate index. We limit results to posts on substack.com and its subdomains and display an excerpt when Exa finds one.</p>
-          <p>Exa sets the default relevance order. The keyword match percentage shows how many of your search terms appear in the title or excerpt. Likes, comments, and paid labels help you decide what to open.</p>
+          <p>Writer Research sends your whole question to Exa, a search engine that matches posts on what they’re about, not only on the words they share with your question. Exa ranks the closest matches first, and that order is the default.</p>
+          <p>That is why it works better for specific questions than Substack’s own search. In the example above, Substack’s first results were about spaceflight and rocket launches. Exa’s first results were trip reports from southern Utah, which is what the question asked for.</p>
+          <p>We keep only posts on substack.com and its subdomains, show up to 10 per search, and display an excerpt when Exa finds one. Sorting by newest or oldest reorders those same results. Likes, comments, and paid labels come from Substack and help you decide what to open. They don’t change the order.</p>
         </section>
       </main>
     </div>

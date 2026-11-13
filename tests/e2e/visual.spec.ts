@@ -8,6 +8,6 @@ test("research desk screenshot", async ({ page }, testInfo) => {
     .fill("How writers find ideas for their newsletter");
   await page.locator("form").getByRole("button", { name: "Search", exact: true }).click();
   await expect(page.getByRole("article")).toHaveCount(demoArticles.length);
-  await expect(page.getByRole("article").first().getByRole("button", { name: "Save", exact: true })).toBeEnabled();
+  await expect(page.getByRole("article").first().getByRole("link", { name: "Open original", exact: true })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("research-desk.png"), fullPage: true });
 });

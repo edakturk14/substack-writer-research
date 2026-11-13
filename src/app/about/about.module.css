@@ -1,3 +1,6 @@
+.heading { padding: 32px 0 24px; text-align: left; }
+.heading h1 { width: auto; margin: 0; font: 38px/1.2 var(--serif); letter-spacing: -1px; }
+.heading > p { margin-top: 12px; color: var(--ink); }
 .heading > p, .section > p { max-width: 65ch; font-size: 16px; line-height: 1.7; }
 .section { padding: 28px 0; border-top: 1px solid var(--line); }
 .section h2 { font: 26px/1.25 var(--serif); }
@@ -18,5 +21,6 @@
 .tryLink { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 8px; color: var(--link); text-underline-offset: 4px; }
 
 @media (max-width: 600px) {
+  .heading h1 { font-size: 32px; letter-spacing: -.7px; }
   .comparison { grid-template-columns: 1fr; gap: 24px; }
 }
