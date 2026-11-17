@@ -1,6 +1,7 @@
 import { MAX_QUERY_LENGTH, type SearchErrorResponse } from "@/lib/contracts";
 import { demoResponse } from "@/lib/fixtures";
 import { readBoundedJson, searchExa, SearchError, withDeadline } from "@/lib/exa";
+import { searchNimble } from "@/lib/nimble";
 import { enrichSubstackArticles } from "@/lib/substack-access";
 
 export const runtime = "nodejs";
@@ -37,7 +38,12 @@ export async function POST(request: Request): Promise<Response> {
     if (!query || query.length > MAX_QUERY_LENGTH || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(query)) {
       throw new SearchError("INVALID_QUERY", "Enter a research question of 1–300 characters.", 400);
     }
-    const result = process.env.DEMO_MODE === "1" ? demoResponse : await searchExa(query);
+    const provider = "provider" in body ? body.provider : "exa";
+    if (provider !== "exa" && provider !== "nimble") {
+      throw new SearchError("INVALID_PROVIDER", "Choose Exa or Nimble.", 400);
+    }
+    const result = process.env.DEMO_MODE === "1" ? { ...demoResponse }
+      : await (provider === "nimble" ? searchNimble(query) : searchExa(query));
     if (result.mode === "live") result.results = await enrichSubstackArticles(result.results);
     return Response.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {

@@ -124,3 +124,13 @@
   .starterList button, .searchButton svg, .starterList svg, .footer svg { transition: none; }
   .starterList button:not(:disabled):hover, .searchButton:hover svg, .starterList button:hover svg, .footer a:hover svg { transform: none; }
 }
+
+.labControls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 18px; }
+.providerPicker { border: 0; padding: 0; display: flex; gap: 8px; }
+.providerPicker legend { margin-bottom: 8px; font: 10px/1.5 var(--mono); text-transform: uppercase; letter-spacing: 1px; }
+.providerPicker label { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 18px; border: 1px solid var(--control-line); border-radius: 7px; background: #ffffffbf; cursor: pointer; font-size: 14px; }
+.providerPicker label:has(input:checked) { background: #edf3ff; border-color: var(--link); color: var(--link); }
+.providerPicker input { accent-color: var(--link); }
+.labNote { margin: -12px 0 24px; font-size: 12px; color: var(--muted); line-height: 1.7; }
+.runSummary { padding: 14px 0; font-size: 14px; font-weight: 500; }
+.runSummary span { display: block; margin-top: 6px; color: var(--muted); font-size: 12px; font-weight: 400; line-height: 1.6; }

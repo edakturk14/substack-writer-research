@@ -21,13 +21,14 @@ function Arrow({ diagonal = true }: { diagonal?: boolean }) {
   );
 }
 
-function safeSearchError(status: number, body: unknown): string {
+function safeSearchError(status: number, body: unknown, provider: "exa" | "nimble"): string {
   const code = body && typeof body === "object" && "error" in body
     && body.error && typeof body.error === "object" && "code" in body.error
     ? body.error.code : null;
+  const keyName = provider === "nimble" ? "NIMBLE_API_KEY" : "EXA_API_KEY";
   // Choose our own copy by known code; never display upstream error text.
-  if (code === "SEARCH_NOT_CONFIGURED") return "Live search is not configured. Set a valid EXA_API_KEY on the server.";
-  if (code === "SEARCH_AUTH_FAILED") return "Live search could not authenticate. Check the server's EXA_API_KEY.";
+  if (code === "SEARCH_NOT_CONFIGURED") return `Live search is not configured. Set a valid ${keyName} on the server.`;
+  if (code === "SEARCH_AUTH_FAILED") return `Live search could not authenticate. Check the server's ${keyName}.`;
   if (status === 503) return "Search is temporarily unavailable. Please try again.";
   if (status === 504 || status === 408) return "Search took too long. Please try again.";
   if (status === 429) return "Search is busy right now. Please wait a moment and try again.";
@@ -80,10 +81,14 @@ function ArticleCard({ article, revealKey, revealed, index }: {
   );
 }
 
-export default function ResearchWorkspace({ demoMode, initialQuery }: {
+export default function ResearchWorkspace({ demoMode, initialQuery, laboratory = false }: {
   demoMode: boolean;
   initialQuery: string;
+  laboratory?: boolean;
 }) {
+  const [provider, setProvider] = useState<"exa" | "nimble">(laboratory ? "nimble" : "exa");
+  const providerName = provider === "nimble" ? "Nimble" : "Exa";
+  const [elapsed, setElapsed] = useState<number | null>(null);
   const [query, setQuery] = useState(initialQuery);
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [response, setResponse] = useState<SearchResponse | null>(null);
@@ -110,6 +115,8 @@ export default function ResearchWorkspace({ demoMode, initialQuery }: {
     }
     const controller = new AbortController();
     requestRef.current = controller;
+    const started = performance.now();
+    setElapsed(null);
     setLoading(true);
     setError(null);
     setResponse(null);
@@ -120,11 +127,11 @@ export default function ResearchWorkspace({ demoMode, initialQuery }: {
       const result = await fetch("/api/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: trimmed }),
+        body: JSON.stringify({ query: trimmed, provider }),
         signal: controller.signal,
       });
       if (!result.ok) {
-        setError(safeSearchError(result.status, await result.json().catch(() => null)));
+        setError(safeSearchError(result.status, await result.json().catch(() => null), provider));
         return;
       }
       const parsed = parseSearchResponse(await result.json());
@@ -134,6 +141,7 @@ export default function ResearchWorkspace({ demoMode, initialQuery }: {
       }
       setResultVersion((previous) => previous + 1);
       setResponse(parsed);
+      setElapsed((performance.now() - started) / 1000);
     } catch {
       setError(controller.signal.aborted
         ? "The search took too long. Your question is still here; please try again."
@@ -164,16 +172,27 @@ export default function ResearchWorkspace({ demoMode, initialQuery }: {
   return (
     <div className={styles.page}>
       <div className={styles.sky} aria-hidden="true" />
-      <SiteHeader current="search" />
+      <SiteHeader current={laboratory ? "lab" : "search"} />
 
       <main id="main" className={styles.main}>
         {isDemo && <div className={styles.demoBanner}><strong>Demo mode</strong><span>Fixed examples, not live search results. Every question returns the same articles.</span></div>}
 
         <section className={styles.pageHeading} aria-labelledby="page-title">
-          <h1 id="page-title">Good writing is<br /><em>out there.</em></h1>
-          <p>Find the Substack posts that get into the specifics.</p>
+          <h1 id="page-title">{laboratory ? <>Same question.<br /><em>New discoveries.</em></> : <>Good writing is<br /><em>out there.</em></>}</h1>
+          <p>{laboratory ? "Try Nimble and Exa. See which posts each one finds." : "Find the Substack posts that get into the specifics."}</p>
         </section>
         <section className={styles.searchSection} aria-label="Article search">
+          {laboratory && <div className={styles.labControls}>
+            <fieldset disabled={loading} className={styles.providerPicker}>
+              <legend>Search with</legend>
+              {(["nimble", "exa"] as const).map((option) => <label key={option}>
+                <input type="radio" name="provider" value={option} checked={provider === option}
+                  onChange={() => { setProvider(option); setResponse(null); setError(null); setElapsed(null); setPage(1); setSort("relevance"); }} />
+                <span>{option === "nimble" ? "Nimble" : "Exa"}</span>
+              </label>)}
+            </fieldset>
+            <p className={styles.hint}>Keep your question, switch providers, then search again.</p>
+          </div>}
           <form onSubmit={search} className={styles.form}>
             <label htmlFor="research-question"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3"><circle cx="6.7" cy="6.7" r="4.6" /><path d="m10 10 4 4" /></svg><span aria-hidden="true">SEARCH SUBSTACK</span><span className={styles.srOnly}>Research question</span></label>
             <div className={styles.inputRow}>
@@ -191,7 +210,7 @@ export default function ResearchWorkspace({ demoMode, initialQuery }: {
               />
             </div>
             <div className={styles.formBottom}>
-              <p id="search-hint" className={styles.hint}>Up to 10 posts per search.</p>
+              <p id="search-hint" className={styles.hint}>{laboratory ? `${providerName} · up to 10 posts` : "Up to 10 posts per search."}</p>
               <button className={styles.searchButton} type="submit" disabled={loading}>
                 {loading && <span className={styles.buttonSpinner} aria-hidden="true" />}
                 {loading ? "Searching…" : "Search"} <Arrow />
@@ -211,6 +230,10 @@ export default function ResearchWorkspace({ demoMode, initialQuery }: {
           </div>
         </section>
 
+        {laboratory && <p className={styles.labNote}>One provider request per search. Both use the same Substack article filters. Nimble uses Standard search; Exa uses Lite. Snippets and results may differ. Custom newsletter domains are excluded.</p>}
+        {laboratory && response && <p className={styles.runSummary}>{isDemo ? "Fixed demo examples" : `${providerName} · ${articles.length} posts · ${elapsed?.toFixed(1)}s total`}
+          {!isDemo && <span>Includes fetching Substack metadata. This is a single run, not a speed benchmark.</span>}
+        </p>}
         <p className={styles.srOnly} role="status" aria-live="polite">{statusText}</p>
 
         <section className={`${styles.readingSection} ${idle ? styles.idleReading : ""}`} aria-label="Search results" aria-busy={loading}>
@@ -251,8 +274,8 @@ export default function ResearchWorkspace({ demoMode, initialQuery }: {
               {showRanking && (
                 <details className={styles.rankingDetails}>
                   <summary>How ranking works</summary>
-                  <p>Your whole question goes to Exa, a search engine that matches posts on what they’re about, not only on the words they share with your question. The post Exa judges closest to your question comes first.</p>
-                  <p>That works better for specific questions than Substack’s own search, which often returns posts that share a word or two with your question but are about something else.</p>
+                  <p>Your whole question goes to {providerName}. We keep its result order, remove duplicates, and include only valid Substack article links. We do not add AI summaries or relevance scores.</p>
+                  <p>{provider === "nimble" ? "Text below each title is a search snippet supplied by Nimble, which may not be a verbatim passage from the article." : "Text below each title is a highlight supplied by Exa."}</p>
                   <p>Sorting by date reorders these same results. Likes and comments come from Substack and are shown for context. They don’t change the order.</p>
                 </details>
               )}
@@ -278,7 +301,7 @@ export default function ResearchWorkspace({ demoMode, initialQuery }: {
           ) : null}
         </section>
       </main>
-      <footer className={styles.footer}><a href="https://exa.ai" target="_blank" rel="noopener noreferrer">SEARCH POWERED BY EXA <Arrow /></a></footer>
+      <footer className={styles.footer}><a href={provider === "nimble" ? "https://www.nimbleway.com" : "https://exa.ai"} target="_blank" rel="noopener noreferrer">SEARCH POWERED BY {providerName.toUpperCase()} <Arrow /></a></footer>
     </div>
   );
 }

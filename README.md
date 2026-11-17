@@ -60,6 +60,40 @@ up to 10 results, Substack domain filters, and highlights. There are no
 automatic retries or silent demo fallbacks. Live searches send the question
 to Exa.
 
+## Search Lab: Nimble and Exa
+
+Open `/lab` (also linked in the header). Nimble is selected by default. Enter a
+question, search, switch to Exa, and submit the same question to inspect its
+results. Switching providers preserves the input and clears the previous results.
+The original home page continues to use Exa.
+
+### Add the Nimble key
+
+1. Get an API key from the [Nimble dashboard](https://online.nimbleway.com/).
+2. In Vercel, open this project's **Settings → Environment Variables**.
+3. Add `NIMBLE_API_KEY`, paste your key, and select **Production** and **Preview**.
+4. Redeploy the deployment you want to test. Environment changes apply to new deployments.
+5. Open `/lab`, select Nimble, and search. Keep `DEMO_MODE=0` for live results.
+
+For local development, put `NIMBLE_API_KEY=...` in `.env.local` and restart the
+server. Never use `NEXT_PUBLIC_NIMBLE_API_KEY`. No key is entered in the browser.
+
+The integration makes one POST to `https://sdk.nimbleway.com/v2/search` with
+Bearer authentication, `search_depth: "standard"`, `max_results: 10`, and
+`include_domains: ["substack.com"]`. It uses Nimble's returned descriptions as
+**search snippets**, not guaranteed verbatim article passages. It does not request
+full-page content or silently fall back to Exa. See the
+[Nimble Search documentation](https://docs.nimbleway.com/nimble-sdk/web-tools/search).
+
+Both providers use the same URL validation, deduplication, and Substack metadata
+lookup. Provider order is preserved. Custom newsletter domains are excluded.
+The page shows the returned article count and total request time including metadata
+lookups, not pure provider latency. Exa Lite and Nimble Standard are different
+configurations, so this is an exploratory demo, not a controlled benchmark.
+Missing credentials, authentication errors, rate limits, malformed responses, and
+timeouts produce visible errors. `DEMO_MODE=1` uses the same explicitly labeled
+fixtures for both providers and does not test live Nimble relevance.
+
 ## Build and verify
 
 ```bash

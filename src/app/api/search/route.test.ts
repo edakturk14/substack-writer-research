@@ -23,6 +23,26 @@ afterEach(() => {
 });
 
 describe("POST /api/search", () => {
+  it("routes Nimble requests without requiring or calling Exa", async () => {
+    vi.stubEnv("EXA_API_KEY", undefined);
+    vi.stubEnv("NIMBLE_API_KEY", "valid-nimble-key");
+    fetchMock.mockResolvedValue(Response.json({ results: [] }));
+    const response = await POST(request({ query: "question", provider: "nimble" }));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ results: [], mode: "live" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe("https://sdk.nimbleway.com/v2/search");
+  });
+  it.each(["unknown", null, {}, 42])("rejects invalid providers before upstream work", async (provider) => {
+    expect((await POST(request({ query: "question", provider }))).status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+  it("labels Nimble fixtures as demo without calling a provider", async () => {
+    vi.stubEnv("DEMO_MODE", "1");
+    const response = await POST(request({ query: "question", provider: "nimble" }));
+    expect(await response.json()).toEqual(demoResponse);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
   it("trims the query, returns live results, and performs exactly one provider request", async () => {
     fetchMock.mockResolvedValue(Response.json({ results: [] }));
     const response = await POST(request({ query: "  thoughtful\nwriting  " }));
