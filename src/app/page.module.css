@@ -94,7 +94,7 @@
   .header { min-height: 68px; padding: 10px 20px; }
   .navigation { gap: 18px; }
   .navigation :is(button, a) { font-size: 13px; }
-  .pageHeading { padding: 32px 0 28px; }
+  .pageHeading { padding: 16px 0 24px; }
   .pageHeading h1 { font-size: 48px; letter-spacing: -1.2px; }
   .pageHeading > p { margin: 18px auto 0; max-width: 300px; font-size: 16px; }
   .sky { height: 800px; background-position: 45% top; }

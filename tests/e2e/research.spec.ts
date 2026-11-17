@@ -218,7 +218,8 @@ test("shows engagement without keyword match or changing relevance order", async
   await expect(second).toContainText("4 reactions");
   await expect(second).toContainText("1 comment");
   await page.getByText("How ranking works", { exact: true }).click();
-  await expect(page.getByText(/better for specific questions than Substack’s own search/)).toBeVisible();
+  await expect(page.getByText(/Your whole question goes to Nimble/)).toBeVisible();
+  await expect(page.getByText(/We keep its result order, remove duplicates/)).toBeVisible();
   await expect(page.getByText(/keyword match/i)).toHaveCount(0);
 });
 
