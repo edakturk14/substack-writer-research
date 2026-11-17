@@ -30,7 +30,7 @@ test.beforeEach(async ({ page, context, baseURL }) => {
 test("the About comparison links to a prefilled search and Search returns home", async ({ page }) => {
   const about = page.getByRole("link", { name: "About", exact: true });
   await expect(page.getByRole("link", { name: "Writer Research", exact: true })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Search", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("link", { name: "Search Lab", exact: true })).toHaveAttribute("aria-current", "page");
 
   await about.click();
   await expect(page).toHaveURL(/\/about$/);
@@ -51,9 +51,9 @@ test("the About comparison links to a prefilled search and Search returns home",
   await expect(card(page)).toBeVisible();
 
   await about.click();
-  await page.getByRole("link", { name: "Search", exact: true }).click();
+  await page.getByRole("link", { name: "Search Lab", exact: true }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("link", { name: "Search", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("link", { name: "Search Lab", exact: true })).toHaveAttribute("aria-current", "page");
 });
 
 for (const method of ["button", "Enter"] as const) {
@@ -70,7 +70,7 @@ for (const method of ["button", "Enter"] as const) {
     await expect(page.getByRole("article")).toHaveCount(demoArticles.length);
     await expect(page.getByText(/fixed examples/i).first()).toBeVisible();
     await expect(field(page)).toHaveValue(question);
-    expect(requests).toEqual([{ query: question }]);
+    expect(requests).toEqual([{ query: question, provider: "nimble" }]);
     for (const [index, article] of demoArticles.entries()) {
       await expect(card(page, index)).toContainText(article.title);
       const passage = card(page, index).getByText(article.excerpt!.slice(0, 80), { exact: false });
@@ -157,8 +157,8 @@ test("search has no saving controls and does not use browser storage", async ({ 
   });
   await page.goto("/?view=saved");
   await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link"))
-    .toHaveText(["Search", "About"]);
-  await expect(page.getByRole("link", { name: "Search", exact: true })).toHaveAttribute("aria-current", "page");
+    .toHaveText(["Search Lab", "About"]);
+  await expect(page.getByRole("link", { name: "Search Lab", exact: true })).toHaveAttribute("aria-current", "page");
   await search(page);
   await expect(page.getByRole("button", { name: /^(Save|Saved|Remove)$/ })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Saved articles" })).toHaveCount(0);
@@ -310,7 +310,7 @@ test("sorting and paging are local and stable", async ({ page }) => {
 });
 
 test("research desk keeps search near the top and results in one readable column", async ({ page }) => {
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Good writing isout there.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Same question.New discoveries.");
   await expect(page.locator("ol")).toHaveCount(0);
   const inputBox = (await field(page).boundingBox())!;
   expect(inputBox.y + inputBox.height).toBeLessThan(600);

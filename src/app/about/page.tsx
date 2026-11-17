@@ -6,8 +6,8 @@ import workspace from "@/app/page.module.css";
 import styles from "./about.module.css";
 
 export const metadata: Metadata = {
-  title: "About | Writer Research",
-  description: "How Writer Research uses Exa to find Substack posts for specific research questions.",
+  title: "About | Newsletter Research",
+  description: "How Newsletter Research uses Nimble and Exa to find Substack posts.",
 };
 
 const question = "Find accounts of visiting Zion and Bryce Canyon in late November. What was closed, and what would they skip if they went again?";
@@ -21,11 +21,11 @@ export default function About() {
       <main id="main" className={workspace.main}>
         <header className={`${workspace.pageHeading} ${styles.heading}`}>
           <h1>Why this search is different</h1>
-          <p>Writer Research is for finding examples you can use in your own writing. Ask a specific question, scan excerpts from Substack posts, and open the ones worth reading.</p>
+          <p>Newsletter Research helps you find Substack posts through different search providers. Ask a question, choose Nimble or Exa, and explore the posts each one returns. The same question can lead to different writing.</p>
         </header>
 
         <section className={styles.section} aria-labelledby="comparison-title">
-          <h2 id="comparison-title">The same question in both searches</h2>
+          <h2 id="comparison-title">An example: Substack search and Exa</h2>
           <blockquote>{question}</blockquote>
           <div className={styles.comparison}>
             <figure>
@@ -36,7 +36,7 @@ export default function About() {
               </a>
             </figure>
             <figure>
-              <figcaption><strong>Writer Research</strong><span>The first results included a southern Utah camping report and a drive through Bryce Canyon.</span></figcaption>
+              <figcaption><strong>Newsletter Research · Exa</strong><span>The first results included a southern Utah camping report and a drive through Bryce Canyon.</span></figcaption>
               <a href={writerResearchScreenshot} target="_blank" rel="noopener" aria-label="Open the Writer Research screenshot at full size in a new tab">
                 <Image src={writerResearchScreenshot} width={768} height={937} unoptimized
                   alt="Writer Research shows a southern Utah camping report and an account of driving through Bryce Canyon, with excerpts from both posts." />
@@ -47,11 +47,19 @@ export default function About() {
           <Link className={styles.tryLink} href={{ pathname: "/", query: { q: question } }}>Try this question <span aria-hidden="true">→</span></Link>
         </section>
 
+        <section className={styles.section} aria-labelledby="nimble-title">
+          <h2 id="nimble-title">Trying the same question with Nimble</h2>
+          <p>Nimble is another way to search for Substack posts. Select Nimble on the home page and submit your question. We ask its Search API for up to 10 results from substack.com, then show the article links and search snippets it returns.</p>
+          <p>Switch to Exa and search again to see what changes. Each provider finds and orders its own results, so you may discover different posts even with the same question. This is a way to explore those differences, without assuming one provider is always better.</p>
+          <p>The screenshots above show the earlier Exa search alongside Substack’s own search. They are kept as an example, not as Nimble results or a live comparison. New searches may return different posts.</p>
+          <p><a href="https://www.nimbleway.com" target="_blank" rel="noopener noreferrer">Learn about Nimble</a> · <Link href="/">Try Search Lab</Link></p>
+        </section>
+
         <section className={styles.section} aria-labelledby="ranking-title">
           <h2 id="ranking-title">How results are ranked</h2>
-          <p>Writer Research sends your whole question to Exa, a search engine that matches posts on what they’re about, not only on the words they share with your question. Exa ranks the closest matches first, and that order is the default.</p>
-          <p>That is why it works better for specific questions than Substack’s own search. In the example above, Substack’s first results were about spaceflight and rocket launches. Exa’s first results were trip reports from southern Utah, which is what the question asked for.</p>
-          <p>We keep only posts on substack.com and its subdomains, show up to 10 per search, and display an excerpt when Exa finds one. Sorting by newest or oldest reorders those same results. Likes, comments, and paid labels come from Substack and help you decide what to open. They don’t change the order.</p>
+          <p>Search Lab sends your whole question to the provider you select: Nimble or Exa. We keep the provider’s result order, remove duplicates, and include only valid Substack article links.</p>
+          <p>The comparison above was made with Exa. In that search, Substack’s first results were about spaceflight and rocket launches. Exa’s first results were trip reports from southern Utah, which is what the question asked for.</p>
+          <p>We keep only posts on substack.com and its subdomains, show up to 10 per search, and display search snippets from Nimble or highlights from Exa when available. Sorting by newest or oldest reorders those same results. Likes, comments, and paid labels come from Substack and help you decide what to open. They don’t change the order.</p>
         </section>
       </main>
     </div>
