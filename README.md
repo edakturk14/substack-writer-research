@@ -62,10 +62,10 @@ to Exa.
 
 ## Search Lab: Nimble and Exa
 
-Open `/lab` (also linked in the header). Nimble is selected by default. Enter a
+Search Lab is the home page at `/`. Old `/lab` links redirect there. Nimble is selected by default. Enter a
 question, search, switch to Exa, and submit the same question to inspect its
 results. Switching providers preserves the input and clears the previous results.
-The original home page continues to use Exa.
+Both providers are available on the home page.
 
 ### Add the Nimble key
 
@@ -73,7 +73,7 @@ The original home page continues to use Exa.
 2. In Vercel, open this project's **Settings → Environment Variables**.
 3. Add `NIMBLE_API_KEY`, paste your key, and select **Production** and **Preview**.
 4. Redeploy the deployment you want to test. Environment changes apply to new deployments.
-5. Open `/lab`, select Nimble, and search. Keep `DEMO_MODE=0` for live results.
+5. Open the home page, select Nimble, and search. Keep `DEMO_MODE=0` for live results.
 
 For local development, put `NIMBLE_API_KEY=...` in `.env.local` and restart the
 server. Never use `NEXT_PUBLIC_NIMBLE_API_KEY`. No key is entered in the browser.

@@ -8,9 +8,9 @@ const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["nor
 const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: "400", variable: "--font-mono", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "Writer Research",
+  title: "Search Lab | Newsletter Research",
   description:
-    "Follow a question into independent writing. Find Substack articles and read excerpts from the original posts.",
+    "Explore Substack posts with Nimble and Exa. Ask the same question and see which writing each search finds.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

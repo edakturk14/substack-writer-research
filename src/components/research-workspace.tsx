@@ -81,12 +81,11 @@ function ArticleCard({ article, revealKey, revealed, index }: {
   );
 }
 
-export default function ResearchWorkspace({ demoMode, initialQuery, laboratory = false }: {
+export default function ResearchWorkspace({ demoMode, initialQuery }: {
   demoMode: boolean;
   initialQuery: string;
-  laboratory?: boolean;
 }) {
-  const [provider, setProvider] = useState<"exa" | "nimble">(laboratory ? "nimble" : "exa");
+  const [provider, setProvider] = useState<"exa" | "nimble">("nimble");
   const providerName = provider === "nimble" ? "Nimble" : "Exa";
   const [elapsed, setElapsed] = useState<number | null>(null);
   const [query, setQuery] = useState(initialQuery);
@@ -172,17 +171,17 @@ export default function ResearchWorkspace({ demoMode, initialQuery, laboratory =
   return (
     <div className={styles.page}>
       <div className={styles.sky} aria-hidden="true" />
-      <SiteHeader current={laboratory ? "lab" : "search"} />
+      <SiteHeader current="lab" />
 
       <main id="main" className={styles.main}>
         {isDemo && <div className={styles.demoBanner}><strong>Demo mode</strong><span>Fixed examples, not live search results. Every question returns the same articles.</span></div>}
 
         <section className={styles.pageHeading} aria-labelledby="page-title">
-          <h1 id="page-title">{laboratory ? <>Same question.<br /><em>New discoveries.</em></> : <>Good writing is<br /><em>out there.</em></>}</h1>
-          <p>{laboratory ? "Try Nimble and Exa. See which posts each one finds." : "Find the Substack posts that get into the specifics."}</p>
+          <h1 id="page-title">Same question.<br /><em>New discoveries.</em></h1>
+          <p>Try Nimble and Exa. See which posts each one finds.</p>
         </section>
         <section className={styles.searchSection} aria-label="Article search">
-          {laboratory && <div className={styles.labControls}>
+          <div className={styles.labControls}>
             <fieldset disabled={loading} className={styles.providerPicker}>
               <legend>Search with</legend>
               {(["nimble", "exa"] as const).map((option) => <label key={option}>
@@ -192,7 +191,7 @@ export default function ResearchWorkspace({ demoMode, initialQuery, laboratory =
               </label>)}
             </fieldset>
             <p className={styles.hint}>Keep your question, switch providers, then search again.</p>
-          </div>}
+          </div>
           <form onSubmit={search} className={styles.form}>
             <label htmlFor="research-question"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3"><circle cx="6.7" cy="6.7" r="4.6" /><path d="m10 10 4 4" /></svg><span aria-hidden="true">SEARCH SUBSTACK</span><span className={styles.srOnly}>Research question</span></label>
             <div className={styles.inputRow}>
@@ -210,7 +209,7 @@ export default function ResearchWorkspace({ demoMode, initialQuery, laboratory =
               />
             </div>
             <div className={styles.formBottom}>
-              <p id="search-hint" className={styles.hint}>{laboratory ? `${providerName} · up to 10 posts` : "Up to 10 posts per search."}</p>
+              <p id="search-hint" className={styles.hint}>{providerName} · up to 10 posts</p>
               <button className={styles.searchButton} type="submit" disabled={loading}>
                 {loading && <span className={styles.buttonSpinner} aria-hidden="true" />}
                 {loading ? "Searching…" : "Search"} <Arrow />
@@ -230,8 +229,8 @@ export default function ResearchWorkspace({ demoMode, initialQuery, laboratory =
           </div>
         </section>
 
-        {laboratory && <p className={styles.labNote}>One provider request per search. Both use the same Substack article filters. Nimble uses Standard search; Exa uses Lite. Snippets and results may differ. Custom newsletter domains are excluded.</p>}
-        {laboratory && response && <p className={styles.runSummary}>{isDemo ? "Fixed demo examples" : `${providerName} · ${articles.length} posts · ${elapsed?.toFixed(1)}s total`}
+        <p className={styles.labNote}>One provider request per search. Both use the same Substack article filters. Nimble uses Standard search; Exa uses Lite. Snippets and results may differ. Custom newsletter domains are excluded.</p>
+        {response && <p className={styles.runSummary}>{isDemo ? "Fixed demo examples" : `${providerName} · ${articles.length} posts · ${elapsed?.toFixed(1)}s total`}
           {!isDemo && <span>Includes fetching Substack metadata. This is a single run, not a speed benchmark.</span>}
         </p>}
         <p className={styles.srOnly} role="status" aria-live="polite">{statusText}</p>
